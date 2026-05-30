@@ -5,6 +5,7 @@ import { Hero } from './components/Hero';
 import { EnergyEstimator } from './components/EnergyEstimator';
 import { EnergyVisualization } from './components/EnergyVisualization';
 import { LeadCapture } from './components/LeadCapture';
+import { CustomerLeadForm } from './components/CustomerLeadForm';
 import { Appliance, CalculationResult } from './types';
 import { calculateEnergyResults } from './utils/calculations';
 
@@ -12,6 +13,7 @@ const navItems = [
   { id: 'hero', label: 'Home', icon: Sun },
   { id: 'estimator', label: 'Estimator', icon: BarChart3 },
   { id: 'visualization', label: 'Dashboard', icon: Battery },
+  { id: 'lead-form', label: 'Quote', icon: FileText },
   { id: 'contact', label: 'Contact', icon: FileText },
 ];
 
@@ -48,7 +50,7 @@ function App() {
   // Track active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['hero', 'estimator', 'visualization', 'contact'];
+      const sections = ['hero', 'estimator', 'visualization', 'lead-form', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const sectionId of sections) {
@@ -132,6 +134,8 @@ function App() {
         </div>
 
         <EnergyVisualization />
+
+        <CustomerLeadForm />
 
         <LeadCapture
           monthlyBill={calculationData.monthlyBill}
