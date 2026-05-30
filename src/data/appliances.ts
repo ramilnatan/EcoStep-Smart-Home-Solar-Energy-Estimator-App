@@ -1,0 +1,81 @@
+import { Appliance } from '../types';
+
+export const appliances: Appliance[] = [
+  {
+    id: 'refrigerator',
+    name: 'Refrigerator',
+    icon: 'Refrigerator',
+    watts: 150,
+    hoursPerDay: 24,
+    category: 'essential',
+  },
+  {
+    id: 'lights',
+    name: 'Lights & Fans',
+    icon: 'Lightbulb',
+    watts: 200,
+    hoursPerDay: 8,
+    category: 'essential',
+  },
+  {
+    id: 'ac',
+    name: 'Air Conditioner',
+    icon: 'Wind',
+    watts: 1500,
+    hoursPerDay: 6,
+    category: 'comfort',
+  },
+  {
+    id: 'office',
+    name: 'Home Office',
+    icon: 'Monitor',
+    watts: 300,
+    hoursPerDay: 8,
+    category: 'work',
+  },
+  {
+    id: 'pump',
+    name: 'Water Pump',
+    icon: 'Droplets',
+    watts: 750,
+    hoursPerDay: 2,
+    category: 'essential',
+  },
+  {
+    id: 'wifi',
+    name: 'WiFi & Security',
+    icon: 'Wifi',
+    watts: 50,
+    hoursPerDay: 24,
+    category: 'essential',
+  },
+  {
+    id: 'tv',
+    name: 'Television',
+    icon: 'Tv',
+    watts: 120,
+    hoursPerDay: 5,
+    category: 'entertainment',
+  },
+  {
+    id: 'kitchen',
+    name: 'Kitchen Appliances',
+    icon: 'ChefHat',
+    watts: 1000,
+    hoursPerDay: 2,
+    category: 'essential',
+  },
+];
+
+export const countryCodes = [
+  { code: '+1', country: 'US/CA', flag: '🇺🇸' },
+  { code: '+44', country: 'UK', flag: '🇬🇧' },
+  { code: '+91', country: 'India', flag: '🇮🇳' },
+  { code: '+61', country: 'Australia', flag: '🇦🇺' },
+  { code: '+49', country: 'Germany', flag: '🇩🇪' },
+  { code: '+33', country: 'France', flag: '🇫🇷' },
+  { code: '+86', country: 'China', flag: '🇨🇳' },
+  { code: '+81', country: 'Japan', flag: '🇯🇵' },
+  { code: '+55', country: 'Brazil', flag: '🇧🇷' },
+  { code: '+27', country: 'South Africa', flag: '🇿🇦' },
+];
