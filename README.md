@@ -2,6 +2,14 @@
 
 Calculate your solar savings, battery backup, and energy independence with EcoStep's intelligent home energy estimator. Get a custom system blueprint and ROI report.
 
+## Project Status
+
+## Live Demo
+
+Website:
+
+https://ecostep-smart-home-s-h8b8.bolt.host
+
 ## Features
 
 - Smart home appliance energy consumption calculator
