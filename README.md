@@ -10,6 +10,14 @@ Website:
 
 https://ecostep-smart-home-s-h8b8.bolt.host
 
+## Purpose
+
+EcoStep helps homeowners estimate energy consumption, solar system requirements, battery backup sizing, energy savings, and return on investment through an interactive web platform.
+
+## My Role
+
+Founder • Product Designer • AI Builder
+
 ## Features
 
 - Smart home appliance energy consumption calculator
