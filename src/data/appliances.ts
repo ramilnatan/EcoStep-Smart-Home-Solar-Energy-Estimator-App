@@ -69,6 +69,7 @@ export const appliances: Appliance[] = [
 
 export const countryCodes = [
   { code: '+1', country: 'US/CA', flag: '🇺🇸' },
+  { code: '+63', country: 'Philippines', flag: 'PH' },
   { code: '+44', country: 'UK', flag: '🇬🇧' },
   { code: '+91', country: 'India', flag: '🇮🇳' },
   { code: '+61', country: 'Australia', flag: '🇦🇺' },
