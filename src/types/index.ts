@@ -3,6 +3,7 @@ export type Appliance = {
   name: string;
   icon: string;
   watts: number;
+  quantity: number;
   hoursPerDay: number;
   category: string;
 };
@@ -32,6 +33,11 @@ export type EnergyData = {
   hour: number;
   solar: number;
   consumption: number;
-  battery: number;
-  grid: number;
+  batteryLevel: number;
+  batteryFlow: number;
+  batteryCharge: number;
+  batteryDischarge: number;
+  gridImport: number;
+  gridExport: number;
+  gridFlow: number;
 };
