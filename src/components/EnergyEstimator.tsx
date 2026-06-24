@@ -11,11 +11,12 @@ import {
   ChefHat,
   Zap,
   DollarSign,
+  WashingMachine,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { Slider } from './ui/Slider';
 import { appliances } from '../data/appliances';
-import { currencies, formatCurrency, convertFromUSD } from '../data/currencies';
+import { currencies, formatCurrency } from '../data/currencies';
 import { Appliance, CalculationResult } from '../types';
 import { calculateEnergyResults } from '../utils/calculations';
 
@@ -28,6 +29,7 @@ const iconMap: Record<string, React.ElementType> = {
   Wifi,
   Tv,
   ChefHat,
+  WashingMachine
 };
 
 type EnergyEstimatorProps = {
@@ -64,6 +66,36 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
       return [...prev, appliance];
     });
   };
+
+  const updateApplianceQuantity = (applianceId: string, change: number) => {
+    setSelectedAppliances((prev) =>
+      prev.map((app) =>
+        app.id === applianceId
+          ? { ...app, quantity: Math.max(1, (app.quantity ?? 1) + change) }
+          : app
+      )
+    );
+  };
+
+  const updateApplianceHours = (applianceId: string, change: number) => {
+    setSelectedAppliances((prev) =>
+      prev.map((app) =>
+        app.id === applianceId
+    ? { ...app, hoursPerDay: Math.max(1, Math.min(24, app.hoursPerDay + change)) }
+    : app
+  )
+);
+};
+
+const updateApplianceWatts = (applianceId: string, watts: number) => {
+  setSelectedAppliances((prev) =>
+    prev.map((app) =>
+      app.id === applianceId
+        ? { ...app, watts: Math.max(1, watts) }
+        : app
+    )
+  );
+};
 
   return (
     <section id="estimator" className="relative py-24 bg-dark-900">
@@ -153,6 +185,10 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
             {appliances.map((appliance, index) => {
               const Icon = iconMap[appliance.icon] || Zap;
               const isSelected = selectedAppliances.some((a) => a.id === appliance.id);
+              const selectedAppliance = selectedAppliances.find((a) => a.id === appliance.id);
+              const displayQuantity = selectedAppliance?.quantity ?? appliance.quantity ?? 1;
+              const displayHours = selectedAppliance?.hoursPerDay ?? appliance.hoursPerDay;
+              const displayWatts = selectedAppliance?.watts ?? appliance.watts;
 
               return (
                 <motion.button
@@ -183,7 +219,7 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
                           transition-all duration-300
                           ${isSelected ? 'bg-eco-green/20' : 'bg-white/5'}
                         `}
-                      >
+                        >
                         <Icon
                           className={`w-7 h-7 transition-colors ${
                             isSelected ? 'text-eco-green' : 'text-gray-400'
@@ -195,10 +231,66 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
                       <div className="text-center">
                         <div className="text-sm font-medium text-white">{appliance.name}</div>
                         <div className="text-xs text-gray-500 mt-1">
-                          {appliance.watts}W
+                        <div
+                         className="flex items-center justify-center gap-1"
+                           onClick={(e) => e.stopPropagation()}
+                             >
+                        <input
+                         type="number"
+                              min="1"
+                              value={displayWatts}
+                              onChange={(e) => updateApplianceWatts(appliance.id, Number(e.target.value))}
+                              className="w-16 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-green"
+                          />
+                         <span>W</span>
                         </div>
-                      </div>
+                          <div
+                            className="flex items-center justify-center gap-2"
+                             onClick={(e) => e.stopPropagation()}
+                           >
+                            <button
+                              type="button"
+                              onClick={() => updateApplianceQuantity(appliance.id, -1)}
+                              className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+                           >
+                              -
+                           </button>
+                             <span>Qty: {displayQuantity}</span>
+                         
+                           <button
+                            type="button"
+                            onClick={() => updateApplianceQuantity(appliance.id, 1)}
+                            className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+                           >
+                             +
+                           </button>
+                        </div>
+         
+                        <div
+                        className="flex items-center justify-center gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                          type="button"
+                          onClick={() => updateApplianceHours(appliance.id, -1)}
+                          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+                          >
+                            -
+                          </button>
 
+                          <span>{displayHours} hrs/day</span>
+
+                          <button
+                           type="button"
+                           onClick={() => updateApplianceHours(appliance.id, 1)}
+                           className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+                          >
+                            +
+                            </button> 
+                            
+                        </div>
+                        </div>
+                        </div>
                       {/* Selection Indicator */}
                       <AnimatePresence>
                         {isSelected && (
@@ -247,32 +339,32 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
 }
 
 function ResultsDisplay({ results, currency }: { results: CalculationResult; currency: string }) {
-  // Convert monthly savings from USD to selected currency
-  const savingsInCurrency = convertFromUSD(results.monthlySavingsUSD, currency);
-  const formattedSavings = formatCurrency(savingsInCurrency, currency);
+  // Monthly savings is already converted to selected currency
+  const formattedSavings = formatCurrency(results.monthlySavings, currency);
+  const hasAppliances = results.dailyConsumptionKWh > 0;
 
   const metrics = [
     {
       label: 'Solar System Size',
-      value: results.systemSizeKW,
+      value: hasAppliances ? results.systemSizeKW : 0,
       unit: 'kW',
       color: 'green',
     },
     {
       label: 'Battery Capacity',
-      value: results.batteryCapacityKWh,
+      value: hasAppliances ? results.batteryCapacityKWh : 0,
       unit: 'kWh',
       color: 'cyan',
     },
     {
       label: 'Daily Consumption',
-      value: results.dailyConsumptionKWh.toFixed(1),
+      value: hasAppliances ? results.dailyConsumptionKWh.toFixed(1) : '0.0',
       unit: 'kWh',
       color: 'amber',
     },
     {
       label: 'Backup Runtime',
-      value: results.backupRuntimeHours.toFixed(0),
+      value: hasAppliances ? results.backupRuntimeHours.toFixed(0) : 0,
       unit: 'hrs',
       color: 'green',
     },
