@@ -43,6 +43,7 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [selectedAppliances, setSelectedAppliances] = useState<Appliance[]>([]);
   const [panelWattage, setPanelWattage] = useState(550);
+  const [costPerKw, setCostPerKw] = useState(900);
   const [results, setResults] = useState<CalculationResult | null>(null);
 
   const currentCurrency = currencies.find((c) => c.code === currency) || currencies[0];
@@ -56,8 +57,15 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
   // Reset monthly bill when currency changes to fit the new range
   const handleCurrencyChange = (newCurrency: string) => {
     const newCurrencyData = currencies.find((c) => c.code === newCurrency) || currencies[0];
+  
     setCurrency(newCurrency);
     setMonthlyBill(newCurrencyData.minBill);
+  
+    if (newCurrency === 'PHP') {
+      setCostPerKw(45000);
+    } else {
+      setCostPerKw(900);
+    }
   };
 
   const toggleAppliance = (appliance: Appliance) => {
@@ -367,11 +375,13 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
           >
             
             <ResultsDisplay
-              results={results}
-              currency={currency}
-              monthlyBill={monthlyBill}
-              panelWattage={panelWattage}
-              setPanelWattage={setPanelWattage}
+             results={results}
+             currency={currency}
+             monthlyBill={monthlyBill}
+             panelWattage={panelWattage}
+             setPanelWattage={setPanelWattage}
+             costPerKw={costPerKw}
+             setCostPerKw={setCostPerKw}
             />
 
           </motion.div>
@@ -387,23 +397,21 @@ function ResultsDisplay({
   monthlyBill,
   panelWattage,
   setPanelWattage,
+  costPerKw,
+  setCostPerKw,
 }: {
   results: CalculationResult;
   currency: string;
   monthlyBill: number;
   panelWattage: number;
   setPanelWattage: (value: number) => void;
+  costPerKw: number;
+  setCostPerKw: (value: number) => void;
 }) {
  
   // Monthly savings is already converted to selected currency
   const formattedSavings = formatCurrency(results.monthlySavings, currency);
   const hasAppliances = results.dailyConsumptionKWh > 0;
-  const costPerKwByCurrency: Record<string, number> = {
-    PHP: 45000,
-    USD: 900,
-  };
-  
-  const costPerKw = costPerKwByCurrency[currency] ?? 900;
   const estimatedSystemCost = hasAppliances ? results.systemSizeKW * costPerKw : 0;
   
   const estimatedNewBill = Math.max(0, monthlyBill - results.monthlySavings);
@@ -593,6 +601,31 @@ function ResultsDisplay({
               Transparent estimate based on your monthly bill, selected appliances, and estimated system size.
             </div>
           </div>
+
+          <div className="mb-4 flex flex-col gap-3 rounded-xl bg-white/5 p-4 md:flex-row md:items-center md:justify-between">
+  <div>
+    <div className="text-sm font-semibold text-white">
+      System Cost Assumption
+    </div>
+    <div className="text-xs text-gray-500">
+      Adjust the estimated installer price per kW to refine the ROI.
+    </div>
+  </div>
+
+  <div className="flex items-center justify-center gap-2">
+    <span className="text-xs text-gray-400">Cost/kW:</span>
+    <input
+      type="number"
+      min="1"
+      value={costPerKw}
+      onChange={(e) =>
+        setCostPerKw(Math.max(1, Number(e.target.value) || 1))
+      }
+      className="w-24 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-green"
+    />
+    <span className="text-xs text-gray-400">/ kW</span>
+  </div>
+</div>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
             <div className="rounded-xl bg-white/5 p-4 text-center">
