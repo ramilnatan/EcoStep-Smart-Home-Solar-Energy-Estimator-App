@@ -12,9 +12,10 @@ const features = [
 
 export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void }) {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900">
-      {/* Animated Background */}
-      <div className="absolute inset-0">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900 pt-28 pb-16">
+    
+    {/* Animated Background */}
+        <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(34,197,94,0.15),transparent_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.1),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(245,158,11,0.05),transparent_50%)]" />
