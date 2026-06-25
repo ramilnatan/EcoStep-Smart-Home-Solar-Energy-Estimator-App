@@ -161,6 +161,9 @@ function App() {
               <p className="text-sm text-gray-500">
                 Smart home solar solutions for a sustainable future.
               </p>
+              <p className="mt-3 text-sm text-gray-500">
+                 Powered by <span className="text-eco-green font-semibold">Salve</span>
+              </p>
             </div>
 
             <div>
@@ -196,7 +199,7 @@ function App() {
               2026 EcoStep. All rights reserved.
             </p>
             <p className="text-sm text-gray-500">
-              Built with solar-powered servers
+            Built for smarter solar decisions
             </p>
           </div>
         </div>
