@@ -487,7 +487,25 @@ function ResultsDisplay({
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="space-y-6">
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 border border-white/10 mb-4">
+            <Zap className="w-4 h-4 text-eco-green" />
+            <span className="text-xs text-gray-400">Personalized Solar Estimate</span>
+          </div>
+    
+          <h3 className="text-2xl sm:text-3xl font-bold text-white">
+            Your Solar Recommendation
+          </h3>
+    
+          <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
+            A personalized estimate based on your monthly bill, selected appliances, and energy profile.
+          </p>
+        </div>
+    
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+
+
       {metrics.map((metric, index) => (
         <motion.div
           key={metric.label}
@@ -721,5 +739,6 @@ function ResultsDisplay({
       </motion.div>
 
     </div>
+   </div>
   );
 }
