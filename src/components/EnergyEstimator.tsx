@@ -42,6 +42,7 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
   const [currency, setCurrency] = useState<string>('USD');
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [selectedAppliances, setSelectedAppliances] = useState<Appliance[]>([]);
+  const [panelWattage, setPanelWattage] = useState(550);
   const [results, setResults] = useState<CalculationResult | null>(null);
 
   const currentCurrency = currencies.find((c) => c.code === currency) || currencies[0];
@@ -364,7 +365,15 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <ResultsDisplay results={results} currency={currency} />
+            
+            <ResultsDisplay
+              results={results}
+              currency={currency}
+              monthlyBill={monthlyBill}
+              panelWattage={panelWattage}
+              setPanelWattage={setPanelWattage}
+            />
+
           </motion.div>
         )}
       </div>
@@ -372,11 +381,51 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
   );
 }
 
-function ResultsDisplay({ results, currency }: { results: CalculationResult; currency: string }) {
+function ResultsDisplay({
+  results,
+  currency,
+  monthlyBill,
+  panelWattage,
+  setPanelWattage,
+}: {
+  results: CalculationResult;
+  currency: string;
+  monthlyBill: number;
+  panelWattage: number;
+  setPanelWattage: (value: number) => void;
+}) {
+ 
   // Monthly savings is already converted to selected currency
   const formattedSavings = formatCurrency(results.monthlySavings, currency);
   const hasAppliances = results.dailyConsumptionKWh > 0;
-
+  const costPerKwByCurrency: Record<string, number> = {
+    PHP: 45000,
+    USD: 900,
+  };
+  
+  const costPerKw = costPerKwByCurrency[currency] ?? 900;
+  const estimatedSystemCost = hasAppliances ? results.systemSizeKW * costPerKw : 0;
+  
+  const estimatedNewBill = Math.max(0, monthlyBill - results.monthlySavings);
+  const annualSavings = results.monthlySavings * 12;
+  
+  const expectedPaybackYears =
+    annualSavings > 0 ? estimatedSystemCost / annualSavings : 0;
+  
+  const optimisticPaybackYears = expectedPaybackYears * 0.85;
+  const conservativePaybackYears = expectedPaybackYears * 1.3;
+  
+  const formattedCurrentBill = formatCurrency(monthlyBill, currency);
+  const formattedNewBill = formatCurrency(estimatedNewBill, currency);
+  const formattedAnnualSavings = formatCurrency(annualSavings, currency);
+  const formattedSystemCost = formatCurrency(estimatedSystemCost, currency);
+  const safePanelWattage = Math.max(1, panelWattage);
+  const panelsNeeded = hasAppliances
+  ? Math.ceil((results.systemSizeKW * 1000) / safePanelWattage)
+  : 0;
+  const totalPvCapacityKW = hasAppliances
+  ? ((panelsNeeded * safePanelWattage) / 1000).toFixed(1)
+  : '0.0';
   const metrics = [
     {
       label: 'Solar System Size',
@@ -409,10 +458,10 @@ function ResultsDisplay({ results, currency }: { results: CalculationResult; cur
       color: 'cyan',
     },
     {
-      label: 'ROI Timeline',
-      value: results.roiYears,
-      unit: 'years',
-      color: 'amber',
+       label: 'ROI Timeline',
+       value: expectedPaybackYears.toFixed(1),
+       unit: 'years',
+       color: 'amber',
     },
   ];
 
@@ -466,6 +515,165 @@ function ResultsDisplay({ results, currency }: { results: CalculationResult; cur
           </div>
         </GlassCard>
       </motion.div>
+             {/* Solar Panel Recommendation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.7 }}
+        className="col-span-2 md:col-span-3 lg:col-span-6"
+      >
+        <GlassCard glow="cyan" className="p-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="text-lg font-bold text-white">
+                Recommended Solar Panel Setup
+              </div>
+              <div className="text-xs text-gray-500">
+                Estimated using editable panel wattage.
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">Panel Wattage:</span>
+              <input
+                type="number"
+                min="1"
+                value={panelWattage}
+                onChange={(e) =>
+                  setPanelWattage(Math.max(1, Number(e.target.value) || 1))
+                }
+                className="w-20 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-cyan"
+              />
+              <span className="text-xs text-gray-400">W</span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-2xl font-bold text-eco-green">
+                {panelsNeeded}
+              </div>
+              <div className="text-xs text-gray-500">Panels Needed</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-2xl font-bold text-eco-cyan">
+                {safePanelWattage}W
+              </div>
+              <div className="text-xs text-gray-500">Panel Size</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center col-span-2 md:col-span-1">
+              <div className="text-2xl font-bold text-eco-amber">
+                {totalPvCapacityKW} kW
+              </div>
+              <div className="text-xs text-gray-500">Total PV Capacity</div>
+            </div>
+          </div>
+
+          <p className="mt-4 text-xs text-gray-500">
+            Final panel count, roof layout, inverter MPPT voltage, and string design should be verified by a qualified solar installer.
+          </p>
+        </GlassCard>
+      </motion.div>
+
+            {/* ROI Savings Breakdown */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.8 }}
+        className="col-span-2 md:col-span-3 lg:col-span-6"
+      >
+        <GlassCard glow="green" className="p-4">
+          <div className="mb-4">
+            <div className="text-lg font-bold text-white">
+              ROI Savings Breakdown
+            </div>
+            <div className="text-xs text-gray-500">
+              Transparent estimate based on your monthly bill, selected appliances, and estimated system size.
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-white">
+                {formattedCurrentBill}
+              </div>
+              <div className="text-xs text-gray-500">Current Bill</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-eco-green">
+                {formattedNewBill}
+              </div>
+              <div className="text-xs text-gray-500">Estimated New Bill</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-eco-cyan">
+                {formattedSavings}
+              </div>
+              <div className="text-xs text-gray-500">Monthly Savings</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-eco-amber">
+                {formattedAnnualSavings}
+              </div>
+              <div className="text-xs text-gray-500">Annual Savings</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-white">
+                {formattedSystemCost}
+              </div>
+              <div className="text-xs text-gray-500">Estimated System Cost</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-eco-green">
+                {expectedPaybackYears.toFixed(1)} yrs
+              </div>
+              <div className="text-xs text-gray-500">Expected Payback</div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-lg font-bold text-eco-green">
+                {optimisticPaybackYears.toFixed(1)} yrs
+              </div>
+              <div className="text-xs text-gray-500">Optimistic Payback</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-lg font-bold text-eco-cyan">
+                {expectedPaybackYears.toFixed(1)} yrs
+              </div>
+              <div className="text-xs text-gray-500">Expected Payback</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-lg font-bold text-eco-amber">
+                {conservativePaybackYears.toFixed(1)} yrs
+              </div>
+              <div className="text-xs text-gray-500">Conservative Payback</div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl bg-white/5 p-4">
+            <div className="text-sm font-semibold text-white mb-2">
+              Assumptions
+            </div>
+            <p className="text-xs text-gray-500">
+              Assumes {results.gridIndependencePercent}% solar offset and an estimated system cost of {formatCurrency(costPerKw, currency)} per kW.
+              Actual savings depend on sunlight, roof angle, battery size, appliance usage, utility rate, and final installation design.
+              Professional site assessment is recommended.
+            </p>
+          </div>
+        </GlassCard>
+      </motion.div>
+
     </div>
   );
 }
