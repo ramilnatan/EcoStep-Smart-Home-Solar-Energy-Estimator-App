@@ -237,103 +237,116 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
                           }`}
                         />
                       </div>
+                                       
+                       {/* Name */}
 
-                      {/* Name */}
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-white">{appliance.name}</div>
-                        <div className="text-xs text-gray-500 mt-1">
-                        <div
-                         className="flex items-center justify-center gap-1"
-                           onClick={(e) => e.stopPropagation()}
-                             >
-                        <input
-                         type="number"
-                              min="1"
-                              value={displayWatts}
-                              onChange={(e) => updateApplianceWatts(appliance.id, Number(e.target.value))}
-                              className="w-16 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-green"
-                          />
-                         <span>W</span>
-                        </div>
+<div className="text-center w-full">
+  <div className="text-sm font-medium text-white">{appliance.name}</div>
 
-                        {appliance.id === 'ac' && (
-                          <div
-                               className="mt-2 flex items-center justify-center gap-1"
-                               onClick={(e) => e.stopPropagation()}
-                          >
-                         <button
-                               type="button"
-                               onClick={() => updateApplianceWatts(appliance.id, 674)}
-                               className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
-                         >
-                             1 HP
-                        </button>
+  {!isSelected ? (
+    <div className="mt-2 text-xs text-gray-500">
+      <div>{displayWatts}W • Qty {displayQuantity}</div>
+      <div>{displayHours} hrs/day</div>
+      <div className="mt-2 text-[10px] text-eco-green">
+        Click to customize
+      </div>
+    </div>
+  ) : (
+    <div className="mt-3 space-y-2 text-xs text-gray-500">
+      <div
+        className="flex items-center justify-center gap-1"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <input
+          type="number"
+          min="1"
+          value={displayWatts}
+          onChange={(e) => updateApplianceWatts(appliance.id, Number(e.target.value))}
+          className="w-16 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-green"
+        />
+        <span>W</span>
+      </div>
 
-                        <button
-                                 type="button"
-                                 onClick={() => updateApplianceWatts(appliance.id, 1011)}
-                                 className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
-                              >
-                                 1.5 HP
-                        </button>
+      {appliance.id === 'ac' && (
+        <div
+          className="flex items-center justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => updateApplianceWatts(appliance.id, 674)}
+            className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+          >
+            1 HP
+          </button>
 
-                         <button
-                                  type="button"
-                                  onClick={() => updateApplianceWatts(appliance.id, 1348)}
-                                  className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
-                         >
-                              2 HP
-                         </button>
-                         </div>
-                        )}
+          <button
+            type="button"
+            onClick={() => updateApplianceWatts(appliance.id, 1011)}
+            className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+          >
+            1.5 HP
+          </button>
 
-                          <div
-                            className="flex items-center justify-center gap-2"
-                             onClick={(e) => e.stopPropagation()}
-                           >
-                            <button
-                              type="button"
-                              onClick={() => updateApplianceQuantity(appliance.id, -1)}
-                              className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
-                           >
-                              -
-                           </button>
-                             <span>Qty: {displayQuantity}</span>
-                         
-                           <button
-                            type="button"
-                            onClick={() => updateApplianceQuantity(appliance.id, 1)}
-                            className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
-                           >
-                             +
-                           </button>
-                        </div>
-         
-                        <div
-                        className="flex items-center justify-center gap-2"
-                        onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                          type="button"
-                          onClick={() => updateApplianceHours(appliance.id, -1)}
-                          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
-                          >
-                            -
-                          </button>
+          <button
+            type="button"
+            onClick={() => updateApplianceWatts(appliance.id, 1348)}
+            className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+          >
+            2 HP
+          </button>
+        </div>
+      )}
 
-                          <span>{displayHours} hrs/day</span>
+      <div
+        className="flex items-center justify-center gap-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => updateApplianceQuantity(appliance.id, -1)}
+          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+        >
+          -
+        </button>
 
-                          <button
-                           type="button"
-                           onClick={() => updateApplianceHours(appliance.id, 1)}
-                           className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
-                          >
-                            +
-                            </button> 
-                            
-                        </div>
-                        </div>
-                        </div>
+        <span>Qty: {displayQuantity}</span>
+
+        <button
+          type="button"
+          onClick={() => updateApplianceQuantity(appliance.id, 1)}
+          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+        >
+          +
+        </button>
+      </div>
+
+      <div
+        className="flex items-center justify-center gap-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => updateApplianceHours(appliance.id, -1)}
+          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+        >
+          -
+        </button>
+
+        <span>{displayHours} hrs/day</span>
+
+        <button
+          type="button"
+          onClick={() => updateApplianceHours(appliance.id, 1)}
+          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+
                       {/* Selection Indicator */}
                       <AnimatePresence>
                         {isSelected && (
