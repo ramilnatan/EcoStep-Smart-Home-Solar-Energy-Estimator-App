@@ -12,6 +12,7 @@ import {
   Zap,
   DollarSign,
   WashingMachine,
+  Fan,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { Slider } from './ui/Slider';
@@ -29,7 +30,8 @@ const iconMap: Record<string, React.ElementType> = {
   Wifi,
   Tv,
   ChefHat,
-  WashingMachine
+  WashingMachine,
+  Fan,
 };
 
 type EnergyEstimatorProps = {
@@ -244,6 +246,38 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
                           />
                          <span>W</span>
                         </div>
+
+                        {appliance.id === 'ac' && (
+                          <div
+                               className="mt-2 flex items-center justify-center gap-1"
+                               onClick={(e) => e.stopPropagation()}
+                          >
+                         <button
+                               type="button"
+                               onClick={() => updateApplianceWatts(appliance.id, 674)}
+                               className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+                         >
+                             1 HP
+                        </button>
+
+                        <button
+                                 type="button"
+                                 onClick={() => updateApplianceWatts(appliance.id, 1011)}
+                                 className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+                              >
+                                 1.5 HP
+                        </button>
+
+                         <button
+                                  type="button"
+                                  onClick={() => updateApplianceWatts(appliance.id, 1348)}
+                                  className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+                         >
+                              2 HP
+                         </button>
+                         </div>
+                        )}
+
                           <div
                             className="flex items-center justify-center gap-2"
                              onClick={(e) => e.stopPropagation()}
