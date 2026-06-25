@@ -30,26 +30,7 @@ export const currencies: Currency[] = [
     maxBill: 50000,
     step: 500,
   },
-  {
-    code: 'SAR',
-    symbol: '﷼',
-    name: 'Saudi Riyal',
-    locale: 'ar-SA',
-    exchangeRate: 3.75, // 1 USD = 3.75 SAR
-    minBill: 100,
-    maxBill: 4000,
-    step: 50,
-  },
-  {
-    code: 'EUR',
-    symbol: '€',
-    name: 'Euro',
-    locale: 'de-DE',
-    exchangeRate: 0.92, // Approximate: 1 USD = 0.92 EUR
-    minBill: 45,
-    maxBill: 900,
-    step: 10,
-  },
+   
 ];
 
 export const DEFAULT_CURRENCY = currencies[0];
