@@ -4,6 +4,7 @@ import { Sun, Battery, BarChart3, FileText, ChevronUp } from 'lucide-react';
 import { Hero } from './components/Hero';
 import { EnergyEstimator } from './components/EnergyEstimator';
 import { EnergyVisualization } from './components/EnergyVisualization';
+import { SolarGuide } from './components/SolarGuide';
 import { LeadCapture } from './components/LeadCapture';
 import { CustomerLeadForm } from './components/CustomerLeadForm';
 import { Appliance, CalculationResult } from './types';
@@ -12,10 +13,12 @@ import { calculateEnergyResults } from './utils/calculations';
 const navItems = [
   { id: 'hero', label: 'Home', icon: Sun },
   { id: 'estimator', label: 'Estimator', icon: BarChart3 },
+  { id: 'resources', label: 'Resources', icon: FileText },
   { id: 'visualization', label: 'Dashboard', icon: Battery },
   { id: 'lead-form', label: 'Quote', icon: FileText },
   { id: 'contact', label: 'Contact', icon: FileText },
 ];
+
 
 function App() {
   const estimatorRef = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ function App() {
   // Track active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['hero', 'estimator', 'visualization', 'lead-form', 'contact'];
+      const sections = ['hero', 'estimator', 'resources', 'visualization', 'lead-form', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const sectionId of sections) {
@@ -132,6 +135,8 @@ function App() {
         <div ref={estimatorRef}>
           <EnergyEstimator onCalculate={handleCalculate} />
         </div>
+  
+        <SolarGuide onScrollToEstimator={scrollToEstimator} />
 
         <EnergyVisualization />
 
