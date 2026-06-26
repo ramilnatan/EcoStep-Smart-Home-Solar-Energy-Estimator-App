@@ -209,10 +209,23 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <Zap className="w-5 h-5 text-eco-cyan" />
-            <h3 className="text-xl font-semibold text-white">Select Your Appliances</h3>
-          </div>
+          <div className="mb-8 text-center">
+  <h3 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+    <Zap className="w-6 h-6 text-eco-cyan" />
+    Select Your Appliances
+  </h3>
+
+  <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-gray-400">
+    <span className="h-2 w-2 rounded-full bg-eco-green" />
+    <span>
+      Public Demo • {selectedAppliances.length}/{DEMO_APPLIANCE_LIMIT} appliances selected
+    </span>
+  </div>
+
+  <p className="mt-3 text-xs text-gray-500">
+    Full access unlocks unlimited appliances, branded reports, and company lead capture.
+  </p>
+</div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {appliances.map((appliance, index) => {
