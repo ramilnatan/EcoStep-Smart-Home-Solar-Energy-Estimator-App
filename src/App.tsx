@@ -17,7 +17,7 @@ const navItems = [
   { id: 'resources', label: 'Resources', icon: FileText },
   { id: 'visualization', label: 'Dashboard', icon: Battery },
   { id: 'lead-form', label: 'Quote', icon: FileText },
-  { id: 'contact', label: 'Contact', icon: FileText },
+  { id: 'footer-contact', label: 'Contact', icon: FileText },
 ];
 
 
@@ -54,7 +54,7 @@ function App() {
   // Track active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['hero', 'estimator', 'resources', 'visualization', 'lead-form', 'contact'];
+      const sections = ['hero', 'estimator', 'resources', 'visualization', 'lead-form', 'footer-contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const sectionId of sections) {
@@ -153,7 +153,7 @@ function App() {
         />
       </main>
 
-      <footer className="py-12 bg-dark-900 border-t border-white/5">
+      <footer id="footer-contact" className="py-12 bg-dark-900 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
@@ -179,7 +179,7 @@ function App() {
               <ul className="space-y-2 text-sm text-gray-500">
                 <li><a href="#estimator" className="hover:text-eco-green transition-colors">Solar Estimator</a></li>
                 <li><a href="#visualization" className="hover:text-eco-green transition-colors">Energy Dashboard</a></li>
-                <li><a href="#contact" className="hover:text-eco-green transition-colors">Get Quote</a></li>
+                <li><a href="#lead-form" className="hover:text-eco-green transition-colors">Get Quote</a></li>
               </ul>
             </div>
 
@@ -188,7 +188,7 @@ function App() {
               <ul className="space-y-2 text-sm text-gray-500">
                 <li><a href="#" className="hover:text-eco-green transition-colors">About Us</a></li>
                 <li><a href="#" className="hover:text-eco-green transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-eco-green transition-colors">Contact</a></li>
+                <li><a href="#footer-contact" className="hover:text-eco-green transition-colors">Contact</a></li>
               </ul>
             </div>
 
