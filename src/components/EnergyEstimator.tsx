@@ -109,7 +109,7 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
 };
 
   return (
-    <section id="estimator" className="relative py-24 bg-dark-900">
+    <section id="estimator" className="relative bg-dark-900 py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -130,7 +130,7 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
 
         {/* Currency Selector & Monthly Bill Slider */}
         <motion.div
-          className="max-w-2xl mx-auto mb-16"
+          className="max-w-2xl mx-auto mb-24"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -181,7 +181,7 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
 
         {/* Appliance Selection */}
         <motion.div
-          className="mb-16"
+          className="mb-24 pt-8"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -380,7 +380,7 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
         </motion.div>
 
         {/* Results Display */}
-        {results && (
+        {results && selectedAppliances.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
