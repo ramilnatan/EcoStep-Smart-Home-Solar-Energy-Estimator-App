@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Battery, BarChart3, FileText, ChevronUp } from 'lucide-react';
 import { Hero } from './components/Hero';
 import { EnergyEstimator } from './components/EnergyEstimator';
-import { EnergyVisualization } from './components/EnergyVisualization';
 import { DemoAccessBanner } from './components/DemoAccessBanner';
 import { SolarGuide } from './components/SolarGuide';
 import { LeadCapture } from './components/LeadCapture';
 import { CustomerLeadForm } from './components/CustomerLeadForm';
 import { Appliance, CalculationResult } from './types';
 import { calculateEnergyResults } from './utils/calculations';
+import { FullAccessGate } from './components/FullAccessGate';
 
 const navItems = [
   { id: 'hero', label: 'Home', icon: Sun },
@@ -141,7 +141,7 @@ function App() {
   
         <SolarGuide onScrollToEstimator={scrollToEstimator} />
 
-        <EnergyVisualization />
+        <FullAccessGate />
 
         <CustomerLeadForm />
 
