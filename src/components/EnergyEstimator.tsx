@@ -379,6 +379,21 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
           </div>
         </motion.div>
 
+        {/* Empty Recommendation Message */}
+{selectedAppliances.length === 0 && (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    className="mt-10 text-center"
+  >
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-gray-400">
+      <Zap className="w-4 h-4 text-eco-green" />
+      <span>Select at least one appliance to generate your solar recommendation.</span>
+    </div>
+  </motion.div>
+)}
+
         {/* Results Display */}
         {results && selectedAppliances.length > 0 && (
           <motion.div
