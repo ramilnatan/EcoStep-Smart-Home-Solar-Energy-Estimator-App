@@ -13,6 +13,9 @@ import {
   DollarSign,
   WashingMachine,
   Fan,
+  Lock,
+  X,
+  ArrowRight,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { Slider } from './ui/Slider';
@@ -44,10 +47,13 @@ type EnergyEstimatorProps = {
   ) => void;
 };
 
+const DEMO_APPLIANCE_LIMIT = 4;
+
 export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
   const [currency, setCurrency] = useState<string>('USD');
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [selectedAppliances, setSelectedAppliances] = useState<Appliance[]>([]);
+  const [showDemoLimitModal, setShowDemoLimitModal] = useState(false);
   const [panelWattage, setPanelWattage] = useState(550);
   const [costPerKw, setCostPerKw] = useState(900);
   const [results, setResults] = useState<CalculationResult | null>(null);
@@ -75,13 +81,23 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
   };
 
   const toggleAppliance = (appliance: Appliance) => {
-    setSelectedAppliances((prev) => {
-      const isSelected = prev.some((a) => a.id === appliance.id);
-      if (isSelected) {
-        return prev.filter((a) => a.id !== appliance.id);
-      }
-      return [...prev, appliance];
-    });
+    const isAlreadySelected = selectedAppliances.some(
+      (app) => app.id === appliance.id
+    );
+  
+    if (isAlreadySelected) {
+      setSelectedAppliances((prev) =>
+        prev.filter((app) => app.id !== appliance.id)
+      );
+      return;
+    }
+  
+    if (selectedAppliances.length >= DEMO_APPLIANCE_LIMIT) {
+      setShowDemoLimitModal(true);
+      return;
+    }
+  
+    setSelectedAppliances((prev) => [...prev, appliance]);
   };
 
   const updateApplianceQuantity = (applianceId: string, change: number) => {
@@ -421,6 +437,69 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
           </motion.div>
         )}
       </div>
+
+      {showDemoLimitModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: 20 }}
+      transition={{ duration: 0.2 }}
+      className="relative w-full max-w-md rounded-3xl border border-white/10 bg-dark-800 p-6 shadow-2xl"
+    >
+      <button
+        onClick={() => setShowDemoLimitModal(false)}
+        className="absolute right-4 top-4 rounded-full bg-white/5 p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+        aria-label="Close demo limit popup"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-eco-green/10">
+        <Lock className="h-7 w-7 text-eco-green" />
+      </div>
+
+      <h3 className="mb-3 text-2xl font-bold text-white">
+        Demo Limit Reached
+      </h3>
+
+      <p className="mb-5 text-sm leading-relaxed text-gray-400">
+        The public EcoStep demo allows up to {DEMO_APPLIANCE_LIMIT} appliances.
+        Request full access to unlock unlimited appliances, branded reports,
+        custom pricing, and company lead capture.
+      </p>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-gray-300">
+        <div className="font-semibold text-white">Full Access includes:</div>
+        <div className="mt-2 space-y-1 text-gray-400">
+          <div>• Unlimited appliance selections</div>
+          <div>• Branded company version</div>
+          <div>• Custom cost per kW settings</div>
+          <div>• Lead capture for your company</div>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <button
+          onClick={() => setShowDemoLimitModal(false)}
+          className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          Continue Demo
+        </button>
+
+        <a
+          href="#lead-form"
+          onClick={() => setShowDemoLimitModal(false)}
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-eco-green px-4 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105"
+        >
+          Request Full Access
+          <ArrowRight className="h-4 w-4" />
+        </a>
+      </div>
+    </motion.div>
+  </div>
+)}
+
     </section>
   );
 }
