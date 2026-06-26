@@ -14,9 +14,10 @@ type LeadCaptureProps = {
   selectedAppliances: Appliance[];
   results: CalculationResult;
   currency: string;
+  costPerKw: number;
 };
 
-export function LeadCapture({ monthlyBill, selectedAppliances, results, currency }: LeadCaptureProps) {
+export function LeadCapture({ monthlyBill, selectedAppliances, results, currency,costPerKw, }: LeadCaptureProps) {
   const [formData, setFormData] = useState<LeadFormData>({
     fullName: '',
     email: '',
@@ -26,6 +27,9 @@ export function LeadCapture({ monthlyBill, selectedAppliances, results, currency
     notes: '',
   });
   const [errors, setErrors] = useState<Partial<LeadFormData>>({});
+  const estimatedSystemCost = results.systemSizeKW * costPerKw;
+  const annualSavings = results.monthlySavings * 12;
+  const expectedPaybackYears = annualSavings > 0 ? estimatedSystemCost / annualSavings : 0;
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -59,40 +63,50 @@ export function LeadCapture({ monthlyBill, selectedAppliances, results, currency
 
     setIsLoading(true);
 
+    const payload = {
+      full_name: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      country_code: formData.countryCode,
+      currency: currency,
+      monthly_bill: monthlyBill,
+      selected_appliances: selectedAppliances,
+      estimated_kw: results.systemSizeKW,
+      estimated_battery: results.batteryCapacityKWh,
+      daily_consumption: results.dailyConsumptionKWh,
+      backup_runtime: results.backupRuntimeHours,
+      monthly_savings: results.monthlySavings,
+      roi_years: expectedPaybackYears,
+      grid_independence: results.gridIndependencePercent,
+      notes: formData.notes,
+      status: 'new',
+    };
+
+    console.log('[LeadCapture] Selected currency:', currency);
+    console.log('[LeadCapture] Monthly savings displayed (UI):', results.monthlySavings);
+    console.log('[LeadCapture] Monthly savings saved to Supabase:', payload.monthly_savings);
+    console.log('[LeadCapture] Inserting into table: leads');
+    console.log('[LeadCapture] Payload:', payload);
+
     try {
-      const { error } = await supabase.from('leads').insert({
-        full_name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        country_code: formData.countryCode,
-        currency: currency,
-        monthly_bill: monthlyBill,
-        selected_appliances: selectedAppliances,
-        estimated_kw: results.systemSizeKW,
-        estimated_battery: results.batteryCapacityKWh,
-        daily_consumption: results.dailyConsumptionKWh,
-        backup_runtime: results.backupRuntimeHours,
-        monthly_savings: results.monthlySavingsUSD,
-        roi_years: results.roiYears,
-        grid_independence: results.gridIndependencePercent,
-        notes: formData.notes,
-        status: 'new',
-      });
+      const { error } = await supabase.from('leads').insert(payload);
 
-      if (error) throw error;
+      console.log('[LeadCapture] Supabase response error:', error);
 
-      setShowModal(true);
-      setFormData({
-        fullName: '',
-        email: '',
-        phone: '',
-        countryCode: '+1',
-        currency: currency,
-        notes: '',
-      });
-    } catch (err) {
-      console.error('Error submitting form:', err);
-      setErrors({ notes: 'Failed to submit. Please try again.' });
+      if (!error) {
+        setShowModal(true);
+        setFormData({
+          fullName: '',
+          email: '',
+          phone: '',
+          countryCode: '+1',
+          currency: currency,
+          notes: '',
+        });
+      } else {
+        console.error('[LeadCapture] Insert failed:', error);
+        setErrors({ notes: `DB Error [${error.code ?? 'unknown'}]: ${error.message}` });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +156,7 @@ export function LeadCapture({ monthlyBill, selectedAppliances, results, currency
                   <div className="text-xs text-gray-500">Battery</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-eco-amber">{results.roiYears} yrs</div>
+                  <div className="text-2xl font-bold text-eco-amber">{expectedPaybackYears.toFixed(1)} yrs</div>
                   <div className="text-xs text-gray-500">ROI</div>
                 </div>
               </div>
