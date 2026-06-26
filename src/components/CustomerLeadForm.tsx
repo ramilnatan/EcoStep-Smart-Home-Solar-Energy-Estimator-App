@@ -20,6 +20,7 @@ export function CustomerLeadForm() {
     email: '',
     phoneNumber: '',
     location: '',
+    requestType: 'Home Solar Quote',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -75,6 +76,7 @@ export function CustomerLeadForm() {
       email: formData.email,
       phone_number: formData.phoneNumber,
       location: formData.location,
+      request_type: formData.requestType,
     };
 
     console.log('[CustomerLeadForm] Inserting into table: customers');
@@ -92,6 +94,7 @@ export function CustomerLeadForm() {
           email: '',
           phoneNumber: '',
           location: '',
+          requestType: 'Home Solar Quote',
         });
         setErrors({});
       } else {
@@ -144,6 +147,27 @@ export function CustomerLeadForm() {
           >
             <GlassCard glow="green" className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
+
+              <div>
+  <label className="block text-sm font-medium text-gray-300 mb-2">
+    What do you need?
+  </label>
+
+  <select
+    value={formData.requestType}
+    onChange={(e) => handleInputChange('requestType', e.target.value)}
+    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-gray-200 outline-none focus:border-eco-green focus:ring-1 focus:ring-eco-green"
+  >
+    <option value="Home Solar Quote">Home Solar Quote</option>
+    <option value="Installer Demo">Installer Demo</option>
+    <option value="Branded Full-Access Version">Branded Full-Access Version</option>
+  </select>
+
+  <p className="mt-2 text-xs text-gray-500">
+    Choose whether you need a home estimate, installer demo, or branded EcoStep version.
+  </p>
+</div>
+
                 <Input
                   label="Full Name"
                   placeholder="John Doe"
