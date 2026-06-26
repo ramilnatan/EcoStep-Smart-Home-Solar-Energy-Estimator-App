@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Phone, MapPin, Check, Loader2, X } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
@@ -22,6 +22,37 @@ export function CustomerLeadForm() {
     location: '',
     requestType: 'Home Solar Quote',
   });
+  useEffect(() => {
+    const applyStoredRequestType = () => {
+      const storedRequestType = localStorage.getItem('ecostep_request_type');
+  
+      if (storedRequestType) {
+        setFormData((prev) => ({
+          ...prev,
+          requestType: storedRequestType,
+        }));
+  
+        localStorage.removeItem('ecostep_request_type');
+      }
+    };
+  
+    const handleRequestTypeEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+  
+      setFormData((prev) => ({
+        ...prev,
+        requestType: customEvent.detail,
+      }));
+    };
+  
+    applyStoredRequestType();
+  
+    window.addEventListener('ecostep-request-type', handleRequestTypeEvent);
+  
+    return () => {
+      window.removeEventListener('ecostep-request-type', handleRequestTypeEvent);
+    };
+  }, []);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<ToastState>({
