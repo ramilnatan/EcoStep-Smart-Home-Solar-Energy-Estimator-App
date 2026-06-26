@@ -145,12 +145,16 @@ function App() {
 
         <CustomerLeadForm />
 
-        <LeadCapture
-          monthlyBill={calculationData.monthlyBill}
-          selectedAppliances={calculationData.selectedAppliances}
-          results={calculationData.results}
-          currency={calculationData.currency}
-        />
+        {calculationData.selectedAppliances.length > 0 && (
+          <LeadCapture
+           monthlyBill={calculationData.monthlyBill}
+           selectedAppliances={calculationData.selectedAppliances}
+           results={calculationData.results}
+           currency={calculationData.currency}
+          />
+        )}
+
+
       </main>
 
       <footer id="footer-contact" className="py-12 bg-dark-900 border-t border-white/5">
