@@ -35,7 +35,13 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 type EnergyEstimatorProps = {
-  onCalculate: (monthlyBill: number, selectedAppliances: Appliance[], results: CalculationResult, currency: string) => void;
+  onCalculate: (
+    monthlyBill: number,
+    selectedAppliances: Appliance[],
+    results: CalculationResult,
+    currency: string,
+    costPerKw: number
+  ) => void;
 };
 
 export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
@@ -51,8 +57,8 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
   useEffect(() => {
     const calculationResults = calculateEnergyResults(monthlyBill, selectedAppliances, currency);
     setResults(calculationResults);
-    onCalculate(monthlyBill, selectedAppliances, calculationResults, currency);
-  }, [monthlyBill, selectedAppliances, currency, onCalculate]);
+    onCalculate(monthlyBill, selectedAppliances, calculationResults, currency, costPerKw);
+  }, [monthlyBill, selectedAppliances, currency, costPerKw, onCalculate]);
 
   // Reset monthly bill when currency changes to fit the new range
   const handleCurrencyChange = (newCurrency: string) => {
