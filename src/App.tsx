@@ -29,11 +29,13 @@ function App() {
     selectedAppliances: Appliance[];
     results: CalculationResult;
     currency: string;
+    costPerKw: number;
   }>({
     monthlyBill: 150,
     selectedAppliances: [],
     results: calculateEnergyResults(150, [], 'USD'),
     currency: 'USD',
+    costPerKw: 900,
   });
 
   const scrollToEstimator = useCallback(() => {
@@ -41,8 +43,14 @@ function App() {
   }, []);
 
   const handleCalculate = useCallback(
-    (monthlyBill: number, selectedAppliances: Appliance[], results: CalculationResult, currency: string) => {
-      setCalculationData({ monthlyBill, selectedAppliances, results, currency });
+    (
+      monthlyBill: number,
+      selectedAppliances: Appliance[],
+      results: CalculationResult,
+      currency: string,
+      costPerKw: number
+    ) => {
+      setCalculationData({ monthlyBill, selectedAppliances, results, currency, costPerKw });
     },
     []
   );
@@ -147,11 +155,12 @@ function App() {
 
         {calculationData.selectedAppliances.length > 0 && (
           <LeadCapture
-           monthlyBill={calculationData.monthlyBill}
-           selectedAppliances={calculationData.selectedAppliances}
-           results={calculationData.results}
-           currency={calculationData.currency}
-          />
+          monthlyBill={calculationData.monthlyBill}
+          selectedAppliances={calculationData.selectedAppliances}
+          results={calculationData.results}
+          currency={calculationData.currency}
+          costPerKw={calculationData.costPerKw}
+        />
         )}
 
 
