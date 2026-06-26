@@ -4,6 +4,7 @@ import { Sun, Battery, BarChart3, FileText, ChevronUp } from 'lucide-react';
 import { Hero } from './components/Hero';
 import { EnergyEstimator } from './components/EnergyEstimator';
 import { EnergyVisualization } from './components/EnergyVisualization';
+import { DemoAccessBanner } from './components/DemoAccessBanner';
 import { SolarGuide } from './components/SolarGuide';
 import { LeadCapture } from './components/LeadCapture';
 import { CustomerLeadForm } from './components/CustomerLeadForm';
@@ -131,6 +132,8 @@ function App() {
 
       <main>
         <Hero onScrollToEstimator={scrollToEstimator} />
+
+        <DemoAccessBanner />
 
         <div ref={estimatorRef}>
           <EnergyEstimator onCalculate={handleCalculate} />
