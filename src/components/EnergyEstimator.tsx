@@ -501,13 +501,27 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
         </button>
 
         <a
-          href="#lead-form"
-          onClick={() => setShowDemoLimitModal(false)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-eco-green px-4 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105"
-        >
-          Request Full Access
-          <ArrowRight className="h-4 w-4" />
-        </a>
+  href="#lead-form"
+  onClick={() => {
+    localStorage.setItem(
+      'ecostep_request_type',
+      'Branded Full-Access Version'
+    );
+
+    window.dispatchEvent(
+      new CustomEvent('ecostep-request-type', {
+        detail: 'Branded Full-Access Version',
+      })
+    );
+
+    setShowDemoLimitModal(false);
+  }}
+  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-eco-green px-4 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105"
+>
+  Request Full Access
+  <ArrowRight className="h-4 w-4" />
+</a>
+
       </div>
     </motion.div>
   </div>
