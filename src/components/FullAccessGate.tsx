@@ -41,7 +41,7 @@ export function FullAccessGate() {
 
             <div className="rounded-2xl bg-white/5 p-6 text-center">
                <Activity className="w-10 h-10 text-eco-cyan mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-white mb-2">Power Flow Simulation</h3>
+                <h3 className="text-lg font-bold text-white mb-2">Hybrid Power Flow Simulation</h3>
                 <p className="text-sm text-gray-500">
                     Preview how solar panels, battery backup, grid supply, and home loads work together.
                </p>
@@ -76,7 +76,7 @@ export function FullAccessGate() {
                     Want to unlock the full business tools?
                   </h3>
                   <p className="mt-1 text-sm text-gray-400">
-                    Request full access for subscription tools, branded preview, power flow simulation, or white-label setup for your solar company.
+                    Request full access for subscription tools, branded preview, Hybrid power flow simulation, or white-label setup for your solar company.
                   </p>
                 </div>
               </div>
