@@ -12,7 +12,7 @@ const features = [
 
 export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void }) {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900 pt-28 pb-16">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900 pt-24 pb-24">
     
     {/* Animated Background */}
         <div className="absolute inset-0">
@@ -74,7 +74,7 @@ export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void 
       </div>
 
       {/* Hero Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center -translate-y-4 sm:-translate-y-6">
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -91,7 +91,7 @@ export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6"
+          className="text-5xl sm:text-6xl lg:text-6xl xl:text-7xl font-bold mb-6"
         >
           <span className="text-white">Power Your Home </span>
           <span className="bg-gradient-to-r from-eco-green via-eco-cyan to-eco-green bg-clip-text text-transparent">
@@ -127,7 +127,7 @@ export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void 
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-16"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-16"
         >
           {features.map((feature, index) => (
             <motion.div
