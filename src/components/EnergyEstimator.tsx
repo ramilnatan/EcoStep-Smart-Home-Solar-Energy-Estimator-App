@@ -478,7 +478,7 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
 
       <p className="mb-5 text-sm leading-relaxed text-gray-400">
         The public EcoStep demo allows up to {DEMO_APPLIANCE_LIMIT} appliances.
-        Request full access to unlock unlimited appliances, branded reports,
+        Request full access to unlock unlimited appliances, white-label branding,
         custom pricing, and company lead capture.
       </p>
 
@@ -486,7 +486,7 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
         <div className="font-semibold text-white">Full Access includes:</div>
         <div className="mt-2 space-y-1 text-gray-400">
           <div>• Unlimited appliance selections</div>
-          <div>• Branded company version</div>
+          <div>• Full white-label company version</div>
           <div>• Custom cost per kW settings</div>
           <div>• Lead capture for your company</div>
         </div>
@@ -505,12 +505,12 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
   onClick={() => {
     localStorage.setItem(
       'ecostep_request_type',
-      'Branded Full-Access Version'
+      'Full White-Label Version'
     );
 
     window.dispatchEvent(
       new CustomEvent('ecostep-request-type', {
-        detail: 'Branded Full-Access Version',
+        detail: 'Full White-Label Version',
       })
     );
 
