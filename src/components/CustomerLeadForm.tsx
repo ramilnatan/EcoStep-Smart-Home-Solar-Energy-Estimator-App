@@ -165,7 +165,7 @@ export function CustomerLeadForm() {
               <span className="text-eco-green">Solar Quote</span>
             </h2>
              <p className="text-lg text-gray-400">
-                 Fill out the form below to request a solar estimate, installer demo, or branded full-access EcoStep version for your company.
+                Fill out the form below to request a home solar estimate, subscription version, or full white-label EcoStep version for your company.
              </p>
 
           </motion.div>
@@ -190,12 +190,12 @@ export function CustomerLeadForm() {
     className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-gray-200 outline-none focus:border-eco-green focus:ring-1 focus:ring-eco-green"
   >
     <option value="Home Solar Quote">Home Solar Quote</option>
-    <option value="Installer Demo">Installer Demo</option>
-    <option value="Branded Full-Access Version">Branded Full-Access Version</option>
+    <option value="Subscription Version">Subscription Version</option>
+    <option value="Full White-Label Version">Full White-Label Version</option>
   </select>
 
   <p className="mt-2 text-xs text-gray-500">
-    Choose whether you need a home estimate, installer demo, or branded EcoStep version.
+  Choose whether you need a home solar estimate, monthly subscription version, or full white-label EcoStep version.
   </p>
 </div>
 
