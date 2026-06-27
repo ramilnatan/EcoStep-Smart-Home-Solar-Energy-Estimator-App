@@ -19,6 +19,7 @@ const navItems = [
   { id: 'resources', label: 'Resources', icon: FileText },
   { id: 'visualization', label: 'Business Tools', icon: Battery },
   { id: 'access-portal', label: 'Access', icon: FileText },
+  { id: 'versions', label: 'Versions', icon: FileText },
   { id: 'lead-form', label: 'Quote', icon: FileText },
   { id: 'footer-contact', label: 'Contact', icon: FileText },
 ];
@@ -65,7 +66,7 @@ function App() {
   // Track active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['hero', 'estimator', 'resources', 'visualization', 'access-portal', 'lead-form', 'footer-contact'];
+      const sections = ['hero', 'estimator', 'resources', 'visualization', 'access-portal','versions', 'lead-form', 'footer-contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const sectionId of sections) {
@@ -200,6 +201,7 @@ function App() {
                 <li><a href="#estimator" className="hover:text-eco-green transition-colors">Solar Estimator</a></li>
                 <li><a href="#visualization" className="hover:text-eco-green transition-colors">Business Tools</a></li>
                 <li><a href="#access-portal" className="hover:text-eco-green transition-colors">Access Portal</a></li>
+                <li><a href="#versions" className="hover:text-eco-green transition-colors">EcoStep Versions</a></li>
                 <li><a href="#lead-form" className="hover:text-eco-green transition-colors">Get Quote</a></li>
               </ul>
             </div>
