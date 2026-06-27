@@ -11,6 +11,7 @@ import { Appliance, CalculationResult } from './types';
 import { calculateEnergyResults } from './utils/calculations';
 import { FullAccessGate } from './components/FullAccessGate';
 import { AccessPortalPreview } from './components/AccessPortalPreview';
+import { VersionPlans } from './components/VersionPlans';
 
 const navItems = [
   { id: 'hero', label: 'Home', icon: Sun },
@@ -154,6 +155,8 @@ function App() {
         <FullAccessGate />
 
         <AccessPortalPreview />
+
+        <VersionPlans />
 
         <CustomerLeadForm />
 
