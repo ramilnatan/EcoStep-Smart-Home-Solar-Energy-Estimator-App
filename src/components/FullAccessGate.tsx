@@ -19,37 +19,39 @@ export function FullAccessGate() {
           </div>
 
           <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            Unlock the <span className="text-eco-cyan">Installer Dashboard</span>
+            Unlock the <span className="text-eco-cyan">EcoStep Business Tools</span>
           </h2>
 
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-            The public demo shows the estimator experience. Dashboard tools, reports, lead management, and branded client access are available for activated accounts.
-          </p>
+          <p className="mt-4 text-lg text-gray-400 max-w-3xl mx-auto">
+             Turn EcoStep into a business tool for solar installers and distributors with
+             branded lead capture, custom pricing, reports, and company-ready workflows.
+         </p>
+
         </motion.div>
 
         <GlassCard glow="cyan" className="p-8">
           <div className="grid gap-6 md:grid-cols-3">
             <div className="rounded-2xl bg-white/5 p-6 text-center">
               <BarChart3 className="w-10 h-10 text-eco-cyan mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-white mb-2">Live Dashboard</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Branded Estimator</h3>
               <p className="text-sm text-gray-500">
-                View solar estimates, customer activity, and installer performance tools.
+                 Use EcoStep with your company name, logo, colors, and contact details.
               </p>
             </div>
 
             <div className="rounded-2xl bg-white/5 p-6 text-center">
               <FileText className="w-10 h-10 text-eco-green mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-white mb-2">Reports & Quotes</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Custom Reports</h3>
               <p className="text-sm text-gray-500">
-                Generate branded solar reports, ROI summaries, and quotation-ready outputs.
+                 Generate professional solar estimate summaries for customers and sales follow-up.
               </p>
             </div>
 
             <div className="rounded-2xl bg-white/5 p-6 text-center">
               <Users className="w-10 h-10 text-eco-amber mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-white mb-2">Lead Management</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Lead Capture</h3>
               <p className="text-sm text-gray-500">
-                Track homeowner quote requests, installer demo leads, and full-access inquiries.
+                 Collect customer inquiries directly for your solar company or sales team.
               </p>
             </div>
           </div>
