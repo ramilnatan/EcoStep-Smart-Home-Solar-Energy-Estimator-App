@@ -15,7 +15,7 @@ const navItems = [
   { id: 'hero', label: 'Home', icon: Sun },
   { id: 'estimator', label: 'Estimator', icon: BarChart3 },
   { id: 'resources', label: 'Resources', icon: FileText },
-  { id: 'visualization', label: 'Dashboard', icon: Battery },
+  { id: 'visualization', label: 'Business Tools', icon: Battery },
   { id: 'lead-form', label: 'Quote', icon: FileText },
   { id: 'footer-contact', label: 'Contact', icon: FileText },
 ];
@@ -191,7 +191,7 @@ function App() {
               <h4 className="text-white font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-gray-500">
                 <li><a href="#estimator" className="hover:text-eco-green transition-colors">Solar Estimator</a></li>
-                <li><a href="#visualization" className="hover:text-eco-green transition-colors">Energy Dashboard</a></li>
+                <li><a href="#visualization" className="hover:text-eco-green transition-colors">Business Tools</a></li>
                 <li><a href="#lead-form" className="hover:text-eco-green transition-colors">Get Quote</a></li>
               </ul>
             </div>
