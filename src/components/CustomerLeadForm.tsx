@@ -35,7 +35,8 @@ export function CustomerLeadForm() {
         localStorage.removeItem('ecostep_request_type');
       }
     };
-  
+
+    
     const handleRequestTypeEvent = (event: Event) => {
       const customEvent = event as CustomEvent<string>;
   
@@ -53,6 +54,28 @@ export function CustomerLeadForm() {
       window.removeEventListener('ecostep-request-type', handleRequestTypeEvent);
     };
   }, []);
+
+  const requestTypeDetails = {
+    'Home Solar Quote': {
+      title: 'For homeowners',
+      description:
+        'Request a solar estimate based on your monthly bill, selected appliances, panel setup, battery backup, and expected ROI.',
+    },
+    'Subscription Version': {
+      title: 'For solar installers and distributors',
+      description:
+        'Request monthly access to EcoStep as a business sales tool with subscriber access, custom pricing, lead workflow, and Hybrid Power Flow Simulation.',
+    },
+    'Full White-Label Version': {
+      title: 'For solar companies',
+      description:
+        'Request a fully branded EcoStep version with your company logo, colors, contact details, lead capture, custom reports, and Hybrid Power Flow Simulation.',
+    },
+  } as const;
+  
+  const selectedRequestTypeDetail =
+    requestTypeDetails[formData.requestType as keyof typeof requestTypeDetails];
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<ToastState>({
@@ -197,6 +220,18 @@ export function CustomerLeadForm() {
   <p className="mt-2 text-xs text-gray-500">
   Choose whether you need a home solar estimate, monthly subscription version, or full white-label EcoStep version.
   </p>
+
+  {selectedRequestTypeDetail && (
+  <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="text-sm font-semibold text-white">
+      {selectedRequestTypeDetail.title}
+    </div>
+    <p className="mt-1 text-xs leading-relaxed text-gray-400">
+      {selectedRequestTypeDetail.description}
+    </p>
+  </div>
+)}
+
 </div>
 
                 <Input
