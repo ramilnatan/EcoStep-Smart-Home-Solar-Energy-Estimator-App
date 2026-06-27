@@ -138,7 +138,7 @@ export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void 
             >
               <GlassCard
                 glow={feature.color as 'green' | 'cyan' | 'amber'}
-                className="p-4"
+                className="p-4 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:scale-[1.04] hover:shadow-xl hover:shadow-eco-green/10"
               >
                 <div className="flex flex-col items-center gap-2">
                   <div className={`
