@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Lock, BarChart3, FileText, Users, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Lock, BarChart3, FileText, Users, ShieldCheck, ArrowRight, Activity } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 
 export function FullAccessGate() {
@@ -30,13 +30,21 @@ export function FullAccessGate() {
         </motion.div>
 
         <GlassCard glow="cyan" className="p-8">
-          <div className="grid gap-6 md:grid-cols-3">
+           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl bg-white/5 p-6 text-center">
               <BarChart3 className="w-10 h-10 text-eco-cyan mx-auto mb-4" />
               <h3 className="text-lg font-bold text-white mb-2">Branded Estimator</h3>
               <p className="text-sm text-gray-500">
                  Use EcoStep with your company name, logo, colors, and contact details.
               </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/5 p-6 text-center">
+               <Activity className="w-10 h-10 text-eco-cyan mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-white mb-2">Power Flow Simulation</h3>
+                <p className="text-sm text-gray-500">
+                    Preview how solar panels, battery backup, grid supply, and home loads work together.
+               </p>
             </div>
 
             <div className="rounded-2xl bg-white/5 p-6 text-center">
@@ -65,10 +73,10 @@ export function FullAccessGate() {
 
                 <div>
                   <h3 className="text-lg font-bold text-white">
-                    Want to test the full dashboard?
+                    Want to unlock the full business tools?
                   </h3>
                   <p className="mt-1 text-sm text-gray-400">
-                    Request full access for a demo account, branded preview, or white-label setup for your solar company.
+                    Request full access for subscription tools, branded preview, power flow simulation, or white-label setup for your solar company.
                   </p>
                 </div>
               </div>
