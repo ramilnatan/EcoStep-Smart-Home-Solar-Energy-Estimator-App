@@ -195,22 +195,22 @@ function App() {
                 <li><a href="#lead-form" className="hover:text-eco-green transition-colors">Get Quote</a></li>
               </ul>
             </div>
-
+                  
             <div>
               <h4 className="text-white font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-gray-500">
-                <li><a href="#" className="hover:text-eco-green transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-eco-green transition-colors">Careers</a></li>
-                <li><a href="#footer-contact" className="hover:text-eco-green transition-colors">Contact</a></li>
+                 <li><span className="text-gray-500">About Us</span></li>
+                 <li><span className="text-gray-500">Careers</span></li>
+                 <li><a href="#footer-contact" className="hover:text-eco-green transition-colors">Contact</a></li>
               </ul>
             </div>
 
             <div>
               <h4 className="text-white font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-500">
-                <li><a href="#" className="hover:text-eco-green transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-eco-green transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-eco-green transition-colors">Cookie Policy</a></li>
+                 <li><span className="text-gray-500">Privacy Policy</span></li>
+                 <li><span className="text-gray-500">Terms of Service</span></li>
+                 <li><span className="text-gray-500">Cookie Policy</span></li>
               </ul>
             </div>
           </div>
