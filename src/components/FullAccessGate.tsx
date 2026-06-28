@@ -82,9 +82,22 @@ export function FullAccessGate() {
               </div>
 
               <a
-                href="#lead-form"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-5 py-3 text-sm font-semibold text-black transition-transform hover:scale-105"
-              >
+  href="#lead-form"
+  onClick={() => {
+    localStorage.setItem(
+      'ecostep_request_type',
+      'Full White-Label Version'
+    );
+
+    window.dispatchEvent(
+      new CustomEvent('ecostep-request-type', {
+        detail: 'Full White-Label Version',
+      })
+    );
+  }}
+  className="YOUR_EXISTING_CLASSNAME_HERE"
+>
+              
                 Request Full Access
                 <ArrowRight className="w-4 h-4" />
               </a>
