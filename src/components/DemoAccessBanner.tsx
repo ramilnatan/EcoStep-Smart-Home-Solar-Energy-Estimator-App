@@ -33,20 +33,33 @@ export function DemoAccessBanner() {
                     Preview EcoStep as a solar sales and quotation tool.
                   </h3>
 
-                  <p className="mt-1 text-sm text-gray-400 max-w-3xl">
-                    This public demo uses sample estimates. A branded full-access version can include your company logo, colors, contact details, lead capture, reports, and protected installer tools.
+                  <p className="mt-3 text-sm leading-relaxed text-gray-400 max-w-3xl">
+                     The public EcoStep demo lets visitors test the estimator with up to 4 appliances.
+                     Solar installers and distributors can request a subscription version or a full
+                     white-label version with company branding, custom pricing, reports, and lead capture.
                   </p>
+
                 </div>
               </div>
 
               <a
-                href="#lead-form"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-5 py-3 text-sm font-semibold text-black transition-transform hover:scale-105"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Request Full Access
-                <ArrowRight className="w-4 h-4" />
+                  href="#lead-form"
+                    onClick={() => {
+                   localStorage.setItem('ecostep_request_type', 'Subscription Version');
+
+                   window.dispatchEvent(
+                   new CustomEvent('ecostep-request-type', {
+                   detail: 'Subscription Version',
+                   })
+                  );
+                 }}
+                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-5 py-3 text-sm font-semibold text-black transition-transform hover:scale-105"
+               >
+                 <ShieldCheck className="w-4 h-4" />
+                     Request EcoStep Access
+                 <ArrowRight className="w-4 h-4" />
               </a>
+
             </div>
           </GlassCard>
         </motion.div>
