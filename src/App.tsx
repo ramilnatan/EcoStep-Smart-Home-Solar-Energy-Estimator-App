@@ -13,6 +13,8 @@ import { FullAccessGate } from './components/FullAccessGate';
 import { AccessPortalPreview } from './components/AccessPortalPreview';
 import { VersionPlans } from './components/VersionPlans';
 import { AdminDashboardPreview } from './components/AdminDashboardPreview';
+import { SubscriberDashboardPreview } from './components/SubscriberDashboardPreview';
+
 
 const navItems = [
   { id: 'hero', label: 'Home', icon: Sun },
@@ -159,6 +161,8 @@ function App() {
         <AccessPortalPreview />
 
         <AdminDashboardPreview />
+
+        <SubscriberDashboardPreview />
 
         <VersionPlans />
 
