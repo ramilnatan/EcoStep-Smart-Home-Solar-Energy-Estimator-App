@@ -4,7 +4,7 @@ import { GlassCard } from './ui/GlassCard';
 
 export function FullAccessGate() {
   return (
-    <section id="visualization" className="relative bg-dark-900 py-24">
+    <section id="visualization" className="relative bg-dark-900 py-24 scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           className="text-center mb-12"
