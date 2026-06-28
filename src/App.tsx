@@ -12,6 +12,7 @@ import { calculateEnergyResults } from './utils/calculations';
 import { FullAccessGate } from './components/FullAccessGate';
 import { AccessPortalPreview } from './components/AccessPortalPreview';
 import { VersionPlans } from './components/VersionPlans';
+import { AdminDashboardPreview } from './components/AdminDashboardPreview';
 
 const navItems = [
   { id: 'hero', label: 'Home', icon: Sun },
@@ -156,6 +157,8 @@ function App() {
         <FullAccessGate />
 
         <AccessPortalPreview />
+
+        <AdminDashboardPreview />
 
         <VersionPlans />
 
