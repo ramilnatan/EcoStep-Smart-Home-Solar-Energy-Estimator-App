@@ -14,7 +14,7 @@ export function AccessPortalPreview() {
   };
 
   return (
-    <section id="access-portal" className="relative bg-dark-900 py-24">
+    <section id="access-portal" className="relative bg-dark-900 py-24 scroll-mt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
