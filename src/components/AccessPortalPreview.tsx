@@ -118,13 +118,25 @@ export function AccessPortalPreview() {
                 Supabase Auth and protected roles.
               </div>
 
-              <button
-                type="button"
-                onClick={() => setActivePortal('admin')}
-                className="mt-6 w-full rounded-xl border border-eco-green/30 bg-eco-green/10 px-4 py-3 text-sm font-semibold text-eco-green transition-all hover:bg-eco-green hover:text-dark-900"
-              >
-                Open Admin Login Preview
-              </button>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+  <button
+    type="button"
+    onClick={() => setActivePortal('admin')}
+    className="rounded-xl border border-eco-green/30 bg-eco-green/10 px-4 py-3 text-sm font-semibold text-eco-green transition-all hover:bg-eco-green hover:text-dark-900"
+  >
+    Admin Login Preview
+  </button>
+
+  <a
+    href="#admin-dashboard-preview"
+    className="flex items-center justify-center gap-2 rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+  >
+    Dashboard Preview
+    <ArrowRight className="h-4 w-4" />
+  </a>
+</div>
+
+
             </GlassCard>
           </motion.div>
 
@@ -168,7 +180,7 @@ export function AccessPortalPreview() {
                 business offer are finalized.
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => setActivePortal('subscriber')}
@@ -176,6 +188,14 @@ export function AccessPortalPreview() {
                 >
                   Subscriber Login Preview
                 </button>
+
+                <a
+                  href="#subscriber-dashboard-preview"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                  Dashboard Preview
+                  <ArrowRight className="h-4 w-4" />
+                </a>
 
                 <a
                   href="#lead-form"
