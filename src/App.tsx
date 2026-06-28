@@ -174,7 +174,7 @@ function App() {
 
       </main>
 
-      <footer id="footer-contact" className="py-12 bg-dark-900 border-t border-white/5">
+      <footer id="footer-contact" className="py-12 bg-dark-900 border-t border-white/5 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
