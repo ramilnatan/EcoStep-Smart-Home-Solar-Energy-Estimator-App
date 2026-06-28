@@ -173,7 +173,7 @@ export function CustomerLeadForm() {
 
   return (
     <>
-      <section id="lead-form" className="py-24 bg-dark-900">
+      <section id="lead-form" className="py-24 bg-dark-900 scroll-mt-24">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-12"
