@@ -15,6 +15,7 @@ import { VersionPlans } from './components/VersionPlans';
 import { AdminDashboardPreview } from './components/AdminDashboardPreview';
 import { SubscriberDashboardPreview } from './components/SubscriberDashboardPreview';
 import { SaaSRoadmap } from './components/SaaSRoadmap';
+import { EstimateDisclaimer } from './components/EstimateDisclaimer';
 
 
 const navItems = [
@@ -155,6 +156,8 @@ function App() {
         <div ref={estimatorRef}>
           <EnergyEstimator onCalculate={handleCalculate} />
         </div>
+
+        <EstimateDisclaimer />
   
         <SolarGuide onScrollToEstimator={scrollToEstimator} />
 
