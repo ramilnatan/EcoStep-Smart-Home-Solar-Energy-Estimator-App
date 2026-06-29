@@ -40,6 +40,7 @@ const moreNavItems = [
 
 function App() {
   const estimatorRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState('hero');
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -79,6 +80,33 @@ function App() {
   };
 
   // Track active section based on scroll position
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsMoreOpen(false);
+      }
+    };
+  
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMoreOpen(false);
+        setIsMobileMenuOpen(false);
+      }
+    };
+  
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+  
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       const sections = [
@@ -153,7 +181,7 @@ function App() {
   );
 })}
 
-<div className="relative">
+<div ref={moreMenuRef} className="relative">
   <button
     type="button"
     onClick={() => setIsMoreOpen((prev) => !prev)}
