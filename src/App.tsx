@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Battery, BarChart3, FileText, ChevronUp } from 'lucide-react';
+import { Sun, Battery, BarChart3, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 import { Hero } from './components/Hero';
 import { EnergyEstimator } from './components/EnergyEstimator';
 import { DemoAccessBanner } from './components/DemoAccessBanner';
@@ -20,17 +20,20 @@ import { WhyEcoStep } from './components/WhyEcoStep';
 import { FAQSection } from './components/FAQSection';
 
 
-const navItems = [
+const primaryNavItems = [
   { id: 'hero', label: 'Home', icon: Sun },
   { id: 'estimator', label: 'Estimator', icon: BarChart3 },
-  { id: 'resources', label: 'Resources', icon: FileText },
   { id: 'visualization', label: 'Business Tools', icon: Battery },
-  { id: 'access-portal', label: 'Access', icon: FileText },
   { id: 'versions', label: 'Versions', icon: FileText },
+  { id: 'lead-form', label: 'Quote', icon: FileText },
+];
+
+const moreNavItems = [
+  { id: 'resources', label: 'Resources', icon: FileText },
+  { id: 'access-portal', label: 'Access', icon: FileText },
   { id: 'roadmap', label: 'Roadmap', icon: FileText },
   { id: 'why-ecostep', label: 'Why EcoStep', icon: FileText },
   { id: 'faq', label: 'FAQ', icon: FileText },
-  { id: 'lead-form', label: 'Quote', icon: FileText },
   { id: 'footer-contact', label: 'Contact', icon: FileText },
 ];
 
@@ -38,6 +41,7 @@ const navItems = [
 function App() {
   const estimatorRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState('hero');
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [calculationData, setCalculationData] = useState<{
     monthlyBill: number;
     selectedAppliances: Appliance[];
@@ -76,7 +80,19 @@ function App() {
   // Track active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['hero', 'estimator', 'resources', 'visualization', 'access-portal','versions', 'roadmap', 'why-ecostep', 'faq', 'lead-form', 'footer-contact'];
+      const sections = [
+        'hero',
+        'estimator',
+        'resources',
+        'visualization',
+        'access-portal',
+        'roadmap',
+        'why-ecostep',
+        'versions',
+        'faq',
+        'lead-form',
+        'footer-contact',
+      ];
       const scrollPosition = window.scrollY + 100;
 
       for (const sectionId of sections) {
@@ -115,29 +131,70 @@ function App() {
             </motion.div>
 
             <div className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id !== 'hero' ? item.id : ''}`}
-                  onClick={() => {
-                    if (item.id === 'hero') {
-                      scrollToTop();
-                    }
-                  }}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
-                    transition-all duration-300
-                    ${
-                      activeSection === item.id
-                        ? 'bg-eco-green/10 text-eco-green'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }
-                  `}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.label}
-                </a>
-              ))}
+         
+            {primaryNavItems.map((item) => {
+  const Icon = item.icon;
+
+  return (
+    <a
+      key={item.id}
+      href={item.id === 'hero' ? '#' : `#${item.id}`}
+      onClick={() => setIsMoreOpen(false)}
+      className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+        activeSection === item.id
+          ? 'bg-eco-green text-dark-900'
+          : 'text-gray-300 hover:bg-white/10 hover:text-white'
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {item.label}
+    </a>
+  );
+})}
+
+<div className="relative">
+  <button
+    type="button"
+    onClick={() => setIsMoreOpen((prev) => !prev)}
+    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+      moreNavItems.some((item) => item.id === activeSection)
+        ? 'bg-eco-green text-dark-900'
+        : 'text-gray-300 hover:bg-white/10 hover:text-white'
+    }`}
+  >
+    More
+    <ChevronDown
+      className={`h-4 w-4 transition-transform ${
+        isMoreOpen ? 'rotate-180' : ''
+      }`}
+    />
+  </button>
+
+  {isMoreOpen && (
+    <div className="absolute right-0 top-full z-50 mt-3 w-56 overflow-hidden rounded-2xl border border-white/10 bg-dark-800 shadow-2xl">
+      {moreNavItems.map((item) => {
+        const Icon = item.icon;
+
+        return (
+          <a
+            key={item.id}
+            href={`#${item.id}`}
+            onClick={() => setIsMoreOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+              activeSection === item.id
+                ? 'bg-eco-green/10 text-eco-green'
+                : 'text-gray-300 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {item.label}
+          </a>
+        );
+      })}
+    </div>
+  )}
+</div>
+
             </div>
 
             <motion.button
