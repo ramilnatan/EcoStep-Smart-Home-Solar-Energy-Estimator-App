@@ -37,6 +37,11 @@ const moreNavItems = [
   { id: 'footer-contact', label: 'Contact', icon: FileText },
 ];
 
+const moreActiveSectionIds = [
+  ...moreNavItems.map((item) => item.id),
+  'admin-dashboard-preview',
+  'subscriber-dashboard-preview',
+];
 
 function App() {
   const estimatorRef = useRef<HTMLDivElement>(null);
@@ -60,7 +65,18 @@ function App() {
   });
 
   const scrollToEstimator = useCallback(() => {
-    estimatorRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!estimatorRef.current) return;
+  
+    const navOffset = 80;
+    const targetPosition =
+      estimatorRef.current.getBoundingClientRect().top + window.scrollY - navOffset;
+  
+    window.scrollTo({
+      top: targetPosition,
+      behavior: 'smooth',
+    });
+  
+    setActiveSection('estimator');
   }, []);
 
   const handleCalculate = useCallback(
@@ -79,6 +95,29 @@ function App() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const scrollToSection = useCallback((sectionId: string) => {
+    setIsMoreOpen(false);
+    setIsMobileMenuOpen(false);
+    setActiveSection(sectionId);
+  
+    if (sectionId === 'hero') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+  
+    const element = document.getElementById(sectionId);
+    if (!element) return;
+  
+    const navOffset = 80;
+    const targetPosition =
+      element.getBoundingClientRect().top + window.scrollY - navOffset;
+  
+    window.scrollTo({
+      top: targetPosition,
+      behavior: 'smooth',
+    });
+  }, []);
 
   // Track active section based on scroll position
   
@@ -118,35 +157,43 @@ const currentProgress =
 
 setScrollProgress(currentProgress);
 
-      const sections = [
-        'hero',
-        'estimator',
-        'resources',
-        'visualization',
-        'access-portal',
-        'roadmap',
-        'why-ecostep',
-        'versions',
-        'faq',
-        'lead-form',
-        'footer-contact',
-      ];
-      const scrollPosition = window.scrollY + 100;
+const sections = [
+  'hero',
+  'estimator',
+  'resources',
+  'visualization',
+  'access-portal',
+  'admin-dashboard-preview',
+  'subscriber-dashboard-preview',
+  'roadmap',
+  'why-ecostep',
+  'versions',
+  'faq',
+  'lead-form',
+  'footer-contact',
+];
 
-      for (const sectionId of sections) {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          const { offsetTop, offsetHeight } = element;
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(sectionId);
-            break;
-          }
-        }
-      }
+const detectionPoint = window.scrollY + window.innerHeight * 0.35;
+
+let currentSection = 'hero';
+
+for (const sectionId of sections) {
+  const element = document.getElementById(sectionId);
+
+  if (element && detectionPoint >= element.offsetTop) {
+    currentSection = sectionId;
+  }
+}
+
+setActiveSection(currentSection); 
+     
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    handleScroll();
+
+window.addEventListener('scroll', handleScroll);
+return () => window.removeEventListener('scroll', handleScroll);
+
   }, []);
 
   return (
@@ -177,7 +224,10 @@ setScrollProgress(currentProgress);
     <a
       key={item.id}
       href={item.id === 'hero' ? '#' : `#${item.id}`}
-      onClick={() => setIsMoreOpen(false)}
+      onClick={(event) => {
+        event.preventDefault();
+        scrollToSection(item.id);
+      }}
       className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
         activeSection === item.id
           ? 'bg-eco-green text-dark-900'
@@ -195,7 +245,7 @@ setScrollProgress(currentProgress);
     type="button"
     onClick={() => setIsMoreOpen((prev) => !prev)}
     className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
-      moreNavItems.some((item) => item.id === activeSection)
+      moreActiveSectionIds.includes(activeSection)
         ? 'bg-eco-green text-dark-900'
         : 'text-gray-300 hover:bg-white/10 hover:text-white'
     }`}
@@ -217,7 +267,10 @@ setScrollProgress(currentProgress);
           <a
             key={item.id}
             href={`#${item.id}`}
-            onClick={() => setIsMoreOpen(false)}
+            onClick={(event) => {
+              event.preventDefault();
+              scrollToSection(item.id);
+            }}
             className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
               activeSection === item.id
                 ? 'bg-eco-green/10 text-eco-green'
@@ -284,9 +337,9 @@ setScrollProgress(currentProgress);
             <a
               key={item.id}
               href={item.id === 'hero' ? '#' : `#${item.id}`}
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                setIsMoreOpen(false);
+              onClick={(event) => {
+                event.preventDefault();
+                scrollToSection(item.id);
               }}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
                 activeSection === item.id
