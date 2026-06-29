@@ -223,45 +223,53 @@ function App() {
           </div>
         </div>
 
-        {isMobileMenuOpen && (
-  <div className="border-t border-white/5 bg-dark-900/95 px-4 py-4 md:hidden">
-    <div className="grid gap-2">
-      {[...primaryNavItems, ...moreNavItems].map((item) => {
-        const Icon = item.icon;
+        <AnimatePresence>
+  {isMobileMenuOpen && (
+    <motion.div
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.2 }}
+      className="border-t border-white/5 bg-dark-900/95 px-4 py-4 md:hidden"
+    >
+      <div className="grid gap-2">
+        {[...primaryNavItems, ...moreNavItems].map((item) => {
+          const Icon = item.icon;
 
-        return (
-          <a
-            key={item.id}
-            href={item.id === 'hero' ? '#' : `#${item.id}`}
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-              setIsMoreOpen(false);
-            }}
-            className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-              activeSection === item.id
-                ? 'bg-eco-green text-dark-900'
-                : 'text-gray-300 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <Icon className="h-4 w-4" />
-            {item.label}
-          </a>
-        );
-      })}
+          return (
+            <a
+              key={item.id}
+              href={item.id === 'hero' ? '#' : `#${item.id}`}
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsMoreOpen(false);
+              }}
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+                activeSection === item.id
+                  ? 'bg-eco-green text-dark-900'
+                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </a>
+          );
+        })}
 
-      <button
-        type="button"
-        onClick={() => {
-          setIsMobileMenuOpen(false);
-          scrollToEstimator();
-        }}
-        className="mt-2 flex items-center justify-center rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-4 py-3 text-sm font-semibold text-dark-900"
-      >
-        Get Started
-      </button>
-    </div>
-  </div>
-)}
+        <button
+          type="button"
+          onClick={() => {
+            setIsMobileMenuOpen(false);
+            scrollToEstimator();
+          }}
+          className="mt-2 flex items-center justify-center rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-4 py-3 text-sm font-semibold text-dark-900"
+        >
+          Get Started
+        </button>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       </nav>
 
