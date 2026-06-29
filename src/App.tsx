@@ -17,6 +17,7 @@ import { SubscriberDashboardPreview } from './components/SubscriberDashboardPrev
 import { SaaSRoadmap } from './components/SaaSRoadmap';
 import { EstimateDisclaimer } from './components/EstimateDisclaimer';
 import { WhyEcoStep } from './components/WhyEcoStep';
+import { FAQSection } from './components/FAQSection';
 
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { id: 'versions', label: 'Versions', icon: FileText },
   { id: 'roadmap', label: 'Roadmap', icon: FileText },
   { id: 'why-ecostep', label: 'Why EcoStep', icon: FileText },
+  { id: 'faq', label: 'FAQ', icon: FileText },
   { id: 'lead-form', label: 'Quote', icon: FileText },
   { id: 'footer-contact', label: 'Contact', icon: FileText },
 ];
@@ -74,7 +76,7 @@ function App() {
   // Track active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['hero', 'estimator', 'resources', 'visualization', 'access-portal','versions', 'roadmap', 'why-ecostep', 'lead-form', 'footer-contact'];
+      const sections = ['hero', 'estimator', 'resources', 'visualization', 'access-portal','versions', 'roadmap', 'why-ecostep', 'faq', 'lead-form', 'footer-contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const sectionId of sections) {
@@ -177,6 +179,8 @@ function App() {
 
         <VersionPlans />
 
+        <FAQSection />
+
         <CustomerLeadForm />
 
         {calculationData.selectedAppliances.length > 0 && (
@@ -222,6 +226,7 @@ function App() {
                 <li><a href="#versions" className="hover:text-eco-green transition-colors">EcoStep Versions</a></li>
                 <li><a href="#roadmap" className="hover:text-eco-green transition-colors">Roadmap</a></li>
                 <li><a href="#why-ecostep" className="hover:text-eco-green transition-colors">Why EcoStep</a></li>
+                <li><a href="#faq" className="hover:text-eco-green transition-colors">FAQ</a></li> 
                 <li><a href="#lead-form" className="hover:text-eco-green transition-colors">Get Quote</a></li>
               </ul>
             </div>
