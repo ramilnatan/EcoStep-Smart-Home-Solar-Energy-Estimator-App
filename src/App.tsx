@@ -44,6 +44,7 @@ function App() {
   const [activeSection, setActiveSection] = useState('hero');
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [calculationData, setCalculationData] = useState<{
     monthlyBill: number;
     selectedAppliances: Appliance[];
@@ -109,6 +110,14 @@ function App() {
 
   useEffect(() => {
     const handleScroll = () => {
+      const totalScrollable =
+  document.documentElement.scrollHeight - window.innerHeight;
+
+const currentProgress =
+  totalScrollable > 0 ? (window.scrollY / totalScrollable) * 100 : 0;
+
+setScrollProgress(currentProgress);
+
       const sections = [
         'hero',
         'estimator',
@@ -250,8 +259,15 @@ function App() {
 
           </div>
         </div>
+ 
+       <div className="h-1 w-full bg-white/5">
+       <div
+          className="h-full bg-gradient-to-r from-eco-green to-eco-cyan transition-all duration-150"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
 
-        <AnimatePresence>
+    <AnimatePresence>
   {isMobileMenuOpen && (
     <motion.div
       initial={{ opacity: 0, y: -12 }}
