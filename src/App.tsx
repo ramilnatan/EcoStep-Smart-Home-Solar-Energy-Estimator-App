@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Battery, BarChart3, FileText, ChevronUp, ChevronDown } from 'lucide-react';
+import { Sun, Battery, BarChart3, FileText, ChevronUp, ChevronDown, Menu, X } from 'lucide-react';
 import { Hero } from './components/Hero';
 import { EnergyEstimator } from './components/EnergyEstimator';
 import { DemoAccessBanner } from './components/DemoAccessBanner';
@@ -42,6 +42,7 @@ function App() {
   const estimatorRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState('hero');
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [calculationData, setCalculationData] = useState<{
     monthlyBill: number;
     selectedAppliances: Appliance[];
@@ -205,8 +206,63 @@ function App() {
             >
               Get Started
             </motion.button>
+
+            <button
+              type="button"
+                onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-gray-300 transition-colors hover:bg-white/10 hover:text-white md:hidden"
+               aria-label="Toggle mobile menu"
+               >
+               {isMobileMenuOpen ? (
+               <X className="h-5 w-5" />
+                ) : (
+              <Menu className="h-5 w-5" />
+               )}
+            </button>
+
           </div>
         </div>
+
+        {isMobileMenuOpen && (
+  <div className="border-t border-white/5 bg-dark-900/95 px-4 py-4 md:hidden">
+    <div className="grid gap-2">
+      {[...primaryNavItems, ...moreNavItems].map((item) => {
+        const Icon = item.icon;
+
+        return (
+          <a
+            key={item.id}
+            href={item.id === 'hero' ? '#' : `#${item.id}`}
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setIsMoreOpen(false);
+            }}
+            className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+              activeSection === item.id
+                ? 'bg-eco-green text-dark-900'
+                : 'text-gray-300 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {item.label}
+          </a>
+        );
+      })}
+
+      <button
+        type="button"
+        onClick={() => {
+          setIsMobileMenuOpen(false);
+          scrollToEstimator();
+        }}
+        className="mt-2 flex items-center justify-center rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-4 py-3 text-sm font-semibold text-dark-900"
+      >
+        Get Started
+      </button>
+    </div>
+  </div>
+)}
+
       </nav>
 
       <main>
