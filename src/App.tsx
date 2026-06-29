@@ -16,6 +16,7 @@ import { AdminDashboardPreview } from './components/AdminDashboardPreview';
 import { SubscriberDashboardPreview } from './components/SubscriberDashboardPreview';
 import { SaaSRoadmap } from './components/SaaSRoadmap';
 import { EstimateDisclaimer } from './components/EstimateDisclaimer';
+import { WhyEcoStep } from './components/WhyEcoStep';
 
 
 const navItems = [
@@ -26,6 +27,7 @@ const navItems = [
   { id: 'access-portal', label: 'Access', icon: FileText },
   { id: 'versions', label: 'Versions', icon: FileText },
   { id: 'roadmap', label: 'Roadmap', icon: FileText },
+  { id: 'why-ecostep', label: 'Why EcoStep', icon: FileText },
   { id: 'lead-form', label: 'Quote', icon: FileText },
   { id: 'footer-contact', label: 'Contact', icon: FileText },
 ];
@@ -72,7 +74,7 @@ function App() {
   // Track active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['hero', 'estimator', 'resources', 'visualization', 'access-portal','versions', 'roadmap', 'lead-form', 'footer-contact'];
+      const sections = ['hero', 'estimator', 'resources', 'visualization', 'access-portal','versions', 'roadmap', 'why-ecostep', 'lead-form', 'footer-contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const sectionId of sections) {
@@ -171,6 +173,8 @@ function App() {
 
         <SaaSRoadmap />
 
+        <WhyEcoStep />
+
         <VersionPlans />
 
         <CustomerLeadForm />
@@ -217,6 +221,7 @@ function App() {
                 <li><a href="#access-portal" className="hover:text-eco-green transition-colors">Access Portal</a></li>
                 <li><a href="#versions" className="hover:text-eco-green transition-colors">EcoStep Versions</a></li>
                 <li><a href="#roadmap" className="hover:text-eco-green transition-colors">Roadmap</a></li>
+                <li><a href="#why-ecostep" className="hover:text-eco-green transition-colors">Why EcoStep</a></li>
                 <li><a href="#lead-form" className="hover:text-eco-green transition-colors">Get Quote</a></li>
               </ul>
             </div>
