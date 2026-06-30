@@ -12,6 +12,10 @@ export type CalculationResult = {
   systemSizeKW: number;
   batteryCapacityKWh: number;
   dailyConsumptionKWh: number;
+  dayLoadKWh: number;
+  nightLoadKWh: number;
+  usableBatteryKWh: number;
+  generationNeededKWh: number;
   backupRuntimeHours: number;
   monthlySavings: number;
   monthlySavingsUSD: number;
