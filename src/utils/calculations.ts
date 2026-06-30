@@ -117,17 +117,21 @@ export function calculateEnergyResults(
       ? Math.round((totalSystemCost / yearlySavings) * 10) / 10
       : 0;
 
-  return {
-    systemSizeKW,
-    batteryCapacityKWh: Math.round(batteryCapacityKWh * 10) / 10,
-    dailyConsumptionKWh: Math.round(dailyConsumptionKWh * 10) / 10,
-    backupRuntimeHours: Math.round(backupRuntimeHours * 10) / 10,
-    monthlySavings: Math.round(convertFromUSD(monthlySavingsUSD, currencyCode)),
-    monthlySavingsUSD: Math.round(monthlySavingsUSD),
-    roiYears,
-    gridIndependencePercent,
-    electricityRateUSD: ELECTRICITY_RATE,
-  };
+      return {
+        systemSizeKW,
+        batteryCapacityKWh: Math.round(batteryCapacityKWh * 10) / 10,
+        dailyConsumptionKWh: Math.round(dailyConsumptionKWh * 10) / 10,
+        dayLoadKWh: Math.round(dayLoadKWh * 10) / 10,
+        nightLoadKWh: Math.round(nightLoadKWh * 10) / 10,
+        usableBatteryKWh: Math.round((batteryCapacityKWh * BATTERY_DEPTH_OF_DISCHARGE) * 10) / 10,
+        generationNeededKWh: Math.round((dayLoadKWh + batteryCapacityKWh) * 10) / 10,
+        backupRuntimeHours: Math.round(backupRuntimeHours * 10) / 10,
+        monthlySavings: Math.round(convertFromUSD(monthlySavingsUSD, currencyCode)),
+        monthlySavingsUSD: Math.round(monthlySavingsUSD),
+        roiYears,
+        gridIndependencePercent,
+        electricityRateUSD: ELECTRICITY_RATE,
+      };
 }
 
 export function generateEnergyData(): {
