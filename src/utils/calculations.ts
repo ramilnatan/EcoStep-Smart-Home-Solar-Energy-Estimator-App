@@ -1,13 +1,17 @@
 import { Appliance, CalculationResult } from '../types';
 import { convertToUSD, convertFromUSD } from '../data/currencies';
 
-// Solar system calculation constants
-const SOLAR_PEAK_SUN_HOURS = 5; // Average peak sun hours per day
-const SYSTEM_EFFICIENCY = 0.85; // 85% system efficiency (inverter, wiring losses)
-const ELECTRICITY_RATE = 0.12; // $/kWh average rate
-const SOLAR_SYSTEM_COST_PER_KW = 2500; // $/kW installed cost
-const BATTERY_COST_PER_KWH = 500; // $/kWh
-const ESTIMATED_SOLAR_OFFSET_PERCENT = 0.75; // 75% of bill can be offset by solar (typical range 60-85%)
+// Hybrid solar calculation constants
+const DAYTIME_SOLAR_HOURS = 6; // Usable daytime solar window
+const NIGHTTIME_HOURS = 18; // Off-peak / night coverage window
+const SOLAR_PEAK_SUN_HOURS = 4.5; // Peak summer usable sun hours
+const SYSTEM_EFFICIENCY = 0.8; // 80% system efficiency after inverter/wiring losses
+const BATTERY_DEPTH_OF_DISCHARGE = 0.8; // Safe usable LiFePO4 capacity
+const ELECTRICITY_RATE = 0.12; // $/kWh reference rate
+
+// Default cost assumptions used only for backend/default ROI fallback
+const SOLAR_SYSTEM_COST_PER_KW = 2500; // $/kW installed cost assumption
+const BATTERY_COST_PER_KWH = 500; // $/kWh battery cost assumption
 
 export function calculateEnergyResults(
   monthlyBill: number,
@@ -15,50 +19,109 @@ export function calculateEnergyResults(
   currencyCode: string = 'USD'
 ): CalculationResult {
   // Convert bill to USD for consistent calculations
-  const monthlyBillUSD = currencyCode === 'USD' ? monthlyBill : convertToUSD(monthlyBill, currencyCode);
+  const monthlyBillUSD =
+    currencyCode === 'USD'
+      ? monthlyBill
+      : convertToUSD(monthlyBill, currencyCode);
 
-  // Calculate daily consumption from selected appliances ONLY
-  const dailyConsumptionKWh = selectedAppliances.reduce((total, app) => {
-    return total + (app.watts * (app.quantity ?? 1) * app.hoursPerDay) / 1000; // Convert to kWh
-  }, 0);
+  let dailyConsumptionKWh = 0;
+  let dayLoadKWh = 0;
+  let nightLoadKWh = 0;
 
-  // Appliance-based calculations (only when appliances selected)
+  selectedAppliances.forEach((app) => {
+    const quantity = app.quantity ?? 1;
+    const watts = Math.max(0, app.watts);
+    const hoursPerDay = Math.max(0, Math.min(24, app.hoursPerDay));
+    const loadKW = (watts * quantity) / 1000;
+    const applianceEnergyKWh = loadKW * hoursPerDay;
+
+    dailyConsumptionKWh += applianceEnergyKWh;
+
+    const applianceName = app.name.toLowerCase();
+    const applianceId = app.id.toLowerCase();
+    const applianceCategory = app.category.toLowerCase();
+
+    const isNightPriorityLoad =
+      applianceName.includes('light') ||
+      applianceId.includes('light') ||
+      applianceCategory.includes('lighting');
+
+    if (isNightPriorityLoad) {
+      // Lights are normally used after dark, so count them as night load.
+      nightLoadKWh += applianceEnergyKWh;
+      return;
+    }
+
+    if (hoursPerDay >= 24) {
+      // 24-hour appliances, like refrigerators, are split into day and night.
+      dayLoadKWh += loadKW * DAYTIME_SOLAR_HOURS;
+      nightLoadKWh += loadKW * NIGHTTIME_HOURS;
+      return;
+    }
+
+    // Default rule for other appliances:
+    // first 6 hours are assumed daytime solar usage, remaining hours are night/off-peak.
+    const daytimeHours = Math.min(hoursPerDay, DAYTIME_SOLAR_HOURS);
+    const nighttimeHours = Math.max(0, hoursPerDay - DAYTIME_SOLAR_HOURS);
+
+    dayLoadKWh += loadKW * daytimeHours;
+    nightLoadKWh += loadKW * nighttimeHours;
+  });
+
   let systemSizeKW = 0;
   let batteryCapacityKWh = 0;
   let backupRuntimeHours = 0;
   let gridIndependencePercent = 0;
 
   if (selectedAppliances.length > 0 && dailyConsumptionKWh > 0) {
-    // Calculate required solar system size for appliance load
-    const requiredProduction = dailyConsumptionKWh / SYSTEM_EFFICIENCY;
-    systemSizeKW = Math.max(2, Math.ceil(requiredProduction / SOLAR_PEAK_SUN_HOURS));
+    // Battery is sized to safely cover the calculated night load.
+    batteryCapacityKWh = nightLoadKWh / BATTERY_DEPTH_OF_DISCHARGE;
 
-    // Calculate battery capacity for backup (50% of daily consumption)
-    batteryCapacityKWh = Math.ceil(dailyConsumptionKWh * 0.5);
+    // Solar must cover daytime load and recharge the battery bank during peak sun.
+    const totalGenerationNeededKWh = dayLoadKWh + batteryCapacityKWh;
 
-    // Calculate backup runtime (hours at reduced load - essential loads only)
-    const essentialLoadRatio = 0.4; // Assume 40% of load is essential during backup
-    backupRuntimeHours = batteryCapacityKWh / (dailyConsumptionKWh * essentialLoadRatio / 24);
+    const rawSystemSizeKW =
+      totalGenerationNeededKWh / (SOLAR_PEAK_SUN_HOURS * SYSTEM_EFFICIENCY);
+
+    // Round up to nearest 0.5kW for practical installer sizing.
+    systemSizeKW = Math.ceil(rawSystemSizeKW * 2) / 2;
+
+    // True backup runtime based on usable battery capacity and average daily load.
+    const averageHourlyLoadKW = dailyConsumptionKWh / 24;
+    const usableBatteryKWh = batteryCapacityKWh * BATTERY_DEPTH_OF_DISCHARGE;
+
+    backupRuntimeHours =
+      averageHourlyLoadKW > 0 ? usableBatteryKWh / averageHourlyLoadKW : 0;
+
+    // Under the peak summer hybrid assumption, correctly sized solar + battery can reach 100%.
+    gridIndependencePercent = 100;
   }
 
-  // Monthly savings based on bill and estimated solar offset (capped at bill amount)
-  const monthlySavingsUSD = Math.min(monthlyBillUSD, monthlyBillUSD * ESTIMATED_SOLAR_OFFSET_PERCENT);
+  // Estimated savings during optimal sun months.
+  const monthlySavingsUSD =
+    monthlyBillUSD * (gridIndependencePercent / 100);
 
-  // Grid independence based on solar offset percentage (not appliances)
-  gridIndependencePercent = Math.round(ESTIMATED_SOLAR_OFFSET_PERCENT * 100);
+  // Default ROI fallback calculation.
+  // The UI can still refine ROI using the editable cost/kW assumption.
+  const effectiveSystemSizeKW = systemSizeKW > 0 ? systemSizeKW : 0;
+  const effectiveBatteryKWh = batteryCapacityKWh > 0 ? batteryCapacityKWh : 0;
 
-  // Calculate ROI (use system size from appliances or minimum if none selected)
-  const effectiveSystemSizeKW = systemSizeKW > 0 ? systemSizeKW : 2;
-  const effectiveBatteryKWh = batteryCapacityKWh > 0 ? batteryCapacityKWh : 5;
-  const totalSystemCost = (effectiveSystemSizeKW * SOLAR_SYSTEM_COST_PER_KW) + (effectiveBatteryKWh * BATTERY_COST_PER_KWH);
+  const totalSystemCost =
+    effectiveSystemSizeKW * SOLAR_SYSTEM_COST_PER_KW +
+    effectiveBatteryKWh * BATTERY_COST_PER_KWH;
+
   const yearlySavings = monthlySavingsUSD * 12;
-  const roiYears = Math.max(3, Math.round(totalSystemCost / yearlySavings));
+
+  const roiYears =
+    yearlySavings > 0
+      ? Math.round((totalSystemCost / yearlySavings) * 10) / 10
+      : 0;
 
   return {
     systemSizeKW,
-    batteryCapacityKWh,
-    dailyConsumptionKWh,
-    backupRuntimeHours,
+    batteryCapacityKWh: Math.round(batteryCapacityKWh * 10) / 10,
+    dailyConsumptionKWh: Math.round(dailyConsumptionKWh * 10) / 10,
+    backupRuntimeHours: Math.round(backupRuntimeHours * 10) / 10,
     monthlySavings: Math.round(convertFromUSD(monthlySavingsUSD, currencyCode)),
     monthlySavingsUSD: Math.round(monthlySavingsUSD),
     roiYears,
