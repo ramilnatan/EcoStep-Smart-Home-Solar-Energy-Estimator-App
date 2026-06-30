@@ -700,6 +700,61 @@ const estimatedSystemCost = estimatedSolarSystemCost + estimatedBatteryCost;
           </div>
         </GlassCard>
       </motion.div>
+
+{/* Hybrid Load Breakdown */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4, delay: 0.65 }}
+  className="col-span-2 md:col-span-3 lg:col-span-6"
+>
+  <GlassCard glow="cyan" className="p-4">
+    <div className="mb-4">
+      <div className="text-lg font-bold text-white">
+        Hybrid Load Breakdown
+      </div>
+      <div className="text-xs text-gray-500">
+        Shows how EcoStep splits your load between daytime solar use and night battery backup.
+      </div>
+    </div>
+
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="rounded-xl bg-white/5 p-4 text-center">
+        <div className="text-xl font-bold text-eco-green">
+          {results.dayLoadKWh.toFixed(1)} kWh
+        </div>
+        <div className="text-xs text-gray-500">Day Load</div>
+      </div>
+
+      <div className="rounded-xl bg-white/5 p-4 text-center">
+        <div className="text-xl font-bold text-eco-cyan">
+          {results.nightLoadKWh.toFixed(1)} kWh
+        </div>
+        <div className="text-xs text-gray-500">Night Load</div>
+      </div>
+
+      <div className="rounded-xl bg-white/5 p-4 text-center">
+        <div className="text-xl font-bold text-eco-amber">
+          {results.usableBatteryKWh.toFixed(1)} kWh
+        </div>
+        <div className="text-xs text-gray-500">Usable Battery</div>
+      </div>
+
+      <div className="rounded-xl bg-white/5 p-4 text-center">
+        <div className="text-xl font-bold text-white">
+          {results.generationNeededKWh.toFixed(1)} kWh
+        </div>
+        <div className="text-xs text-gray-500">Daily Generation Needed</div>
+      </div>
+    </div>
+
+    <p className="mt-4 text-xs text-gray-500">
+      Day load assumes a 6-hour usable daytime solar window. Night load assumes an 18-hour off-peak period.
+      Battery sizing uses 80% safe LiFePO4 depth of discharge.
+    </p>
+  </GlassCard>
+</motion.div>
+
              {/* Solar Panel Recommendation */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
