@@ -600,7 +600,7 @@ function ResultsDisplay({
       color: 'green',
     },
     {
-      label: 'Monthly Savings',
+      label: 'Optimal Month Savings',
       value: formattedSavings,
       unit: '',
       color: 'cyan',
@@ -626,7 +626,7 @@ function ResultsDisplay({
           </h3>
     
           <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-            A personalized estimate based on your monthly bill, selected appliances, and energy profile.
+            A hybrid solar estimate based on your monthly bill, selected appliances, and optimal peak summer sun conditions.
           </p>
         </div>
     
@@ -752,13 +752,13 @@ function ResultsDisplay({
       >
         <GlassCard glow="green" className="p-4">
           <div className="mb-4">
-            <div className="text-lg font-bold text-white">
-              ROI Savings Breakdown
-            </div>
-            <div className="text-xs text-gray-500">
-              Transparent estimate based on your monthly bill, selected appliances, and estimated system size.
-            </div>
+          <div className="text-lg font-bold text-white">
+             Estimated Savings During Optimal Sun Months
           </div>
+          <div className="text-xs text-gray-500">
+             Transparent hybrid estimate based on peak summer sun, minimal rain, selected appliances, and estimated system size.
+          </div>
+          </div>       
 
           <div className="mb-4 flex flex-col gap-3 rounded-xl bg-white/5 p-4 md:flex-row md:items-center md:justify-between">
   <div>
@@ -857,9 +857,10 @@ function ResultsDisplay({
               Assumptions
             </div>
             <p className="text-xs text-gray-500">
-              Assumes {results.gridIndependencePercent}% solar offset and an estimated system cost of {formatCurrency(costPerKw, currency)} per kW.
-              Actual savings depend on sunlight, roof angle, battery size, appliance usage, utility rate, and final installation design.
-              Professional site assessment is recommended.
+             Assumes optimal peak summer sun conditions, minimal rain, and a properly sized hybrid solar system with battery backup.
+             The estimate uses {results.gridIndependencePercent}% grid independence during optimal months and an estimated system cost of {formatCurrency(costPerKw, currency)} per kW.
+             Actual savings may change during rainy seasons, cloudy days, shading, changes in appliance usage, utility charges, battery sizing, inverter settings, and final installation design.
+             Professional site assessment is recommended.
             </p>
           </div>
         </GlassCard>
