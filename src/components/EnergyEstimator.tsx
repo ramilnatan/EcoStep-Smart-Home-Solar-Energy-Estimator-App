@@ -56,6 +56,7 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
   const [showDemoLimitModal, setShowDemoLimitModal] = useState(false);
   const [panelWattage, setPanelWattage] = useState(550);
   const [costPerKw, setCostPerKw] = useState(900);
+  const [batteryCostPerKwh, setBatteryCostPerKwh] = useState(500);
   const [results, setResults] = useState<CalculationResult | null>(null);
 
   const currentCurrency = currencies.find((c) => c.code === currency) || currencies[0];
@@ -75,8 +76,10 @@ export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
   
     if (newCurrency === 'PHP') {
       setCostPerKw(45000);
+      setBatteryCostPerKwh(20000);
     } else {
       setCostPerKw(900);
+      setBatteryCostPerKwh(500);
     }
   };
 
@@ -445,6 +448,8 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
              setPanelWattage={setPanelWattage}
              costPerKw={costPerKw}
              setCostPerKw={setCostPerKw}
+             batteryCostPerKwh={batteryCostPerKwh}
+             setBatteryCostPerKwh={setBatteryCostPerKwh}
             />
 
           </motion.div>
@@ -539,6 +544,8 @@ function ResultsDisplay({
   setPanelWattage,
   costPerKw,
   setCostPerKw,
+  batteryCostPerKwh,
+  setBatteryCostPerKwh,
 }: {
   results: CalculationResult;
   currency: string;
@@ -547,12 +554,22 @@ function ResultsDisplay({
   setPanelWattage: (value: number) => void;
   costPerKw: number;
   setCostPerKw: (value: number) => void;
+  batteryCostPerKwh: number;
+  setBatteryCostPerKwh: (value: number) => void;
 }) {
  
   // Monthly savings is already converted to selected currency
   const formattedSavings = formatCurrency(results.monthlySavings, currency);
   const hasAppliances = results.dailyConsumptionKWh > 0;
-  const estimatedSystemCost = hasAppliances ? results.systemSizeKW * costPerKw : 0;
+  const estimatedSolarSystemCost = hasAppliances
+  ? results.systemSizeKW * costPerKw
+  : 0;
+
+const estimatedBatteryCost = hasAppliances
+  ? results.batteryCapacityKWh * batteryCostPerKwh
+  : 0;
+
+const estimatedSystemCost = estimatedSolarSystemCost + estimatedBatteryCost;
   
   const estimatedNewBill = Math.max(0, monthlyBill - results.monthlySavings);
   const annualSavings = results.monthlySavings * 12;
@@ -567,6 +584,8 @@ function ResultsDisplay({
   const formattedNewBill = formatCurrency(estimatedNewBill, currency);
   const formattedAnnualSavings = formatCurrency(annualSavings, currency);
   const formattedSystemCost = formatCurrency(estimatedSystemCost, currency);
+  const formattedSolarSystemCost = formatCurrency(estimatedSolarSystemCost, currency);
+  const formattedBatteryCost = formatCurrency(estimatedBatteryCost, currency);
   const safePanelWattage = Math.max(1, panelWattage);
   const panelsNeeded = hasAppliances
   ? Math.ceil((results.systemSizeKW * 1000) / safePanelWattage)
@@ -760,28 +779,71 @@ function ResultsDisplay({
           </div>
           </div>       
 
-          <div className="mb-4 flex flex-col gap-3 rounded-xl bg-white/5 p-4 md:flex-row md:items-center md:justify-between">
-  <div>
+          <div className="mb-4 rounded-xl bg-white/5 p-4">
+  <div className="mb-4">
     <div className="text-sm font-semibold text-white">
-      System Cost Assumption
+      Hybrid System Cost Assumptions
     </div>
     <div className="text-xs text-gray-500">
-      Adjust the estimated installer price per kW to refine the ROI.
+      Adjust the solar/inverter cost per kW and battery cost per kWh to refine the ROI.
     </div>
   </div>
 
-  <div className="flex items-center justify-center gap-2">
-    <span className="text-xs text-gray-400">Cost/kW:</span>
-    <input
-      type="number"
-      min="1"
-      value={costPerKw}
-      onChange={(e) =>
-        setCostPerKw(Math.max(1, Number(e.target.value) || 1))
-      }
-      className="w-24 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-green"
-    />
-    <span className="text-xs text-gray-400">/ kW</span>
+  <div className="grid gap-3 md:grid-cols-2">
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-dark-800/60 p-3">
+      <span className="text-xs text-gray-400">Solar/Inverter Cost per kW:</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          value={costPerKw}
+          onChange={(e) =>
+            setCostPerKw(Math.max(1, Number(e.target.value) || 1))
+          }
+          className="w-24 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-green"
+        />
+        <span className="text-xs text-gray-400">/ kW</span>
+      </div>
+    </div>
+
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-dark-800/60 p-3">
+      <span className="text-xs text-gray-400">Battery Cost per kWh:</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          value={batteryCostPerKwh}
+          onChange={(e) =>
+            setBatteryCostPerKwh(Math.max(1, Number(e.target.value) || 1))
+          }
+          className="w-24 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-cyan"
+        />
+        <span className="text-xs text-gray-400">/ kWh</span>
+      </div>
+    </div>
+  </div>
+
+  <div className="mt-4 grid gap-3 md:grid-cols-3">
+    <div className="rounded-xl bg-white/5 p-3 text-center">
+      <div className="text-sm font-bold text-eco-green">
+        {formattedSolarSystemCost}
+      </div>
+      <div className="text-xs text-gray-500">Solar/Inverter Cost</div>
+    </div>
+
+    <div className="rounded-xl bg-white/5 p-3 text-center">
+      <div className="text-sm font-bold text-eco-cyan">
+        {formattedBatteryCost}
+      </div>
+      <div className="text-xs text-gray-500">Battery Bank Cost</div>
+    </div>
+
+    <div className="rounded-xl bg-white/5 p-3 text-center">
+      <div className="text-sm font-bold text-eco-amber">
+        {formattedSystemCost}
+      </div>
+      <div className="text-xs text-gray-500">Total Hybrid Cost</div>
+    </div>
   </div>
 </div>
 
@@ -818,7 +880,7 @@ function ResultsDisplay({
               <div className="text-xl font-bold text-white">
                 {formattedSystemCost}
               </div>
-              <div className="text-xs text-gray-500">Estimated System Cost</div>
+              <div className="text-xs text-gray-500">Total Hybrid Cost</div>
             </div>
 
             <div className="rounded-xl bg-white/5 p-4 text-center">
@@ -858,7 +920,7 @@ function ResultsDisplay({
             </div>
             <p className="text-xs text-gray-500">
              Assumes optimal peak summer sun conditions, minimal rain, and a properly sized hybrid solar system with battery backup.
-             The estimate uses {results.gridIndependencePercent}% grid independence during optimal months and an estimated system cost of {formatCurrency(costPerKw, currency)} per kW.
+             The estimate uses {results.gridIndependencePercent}% grid independence during optimal months, {formatCurrency(costPerKw, currency)} per kW for solar/inverter cost, and {formatCurrency(batteryCostPerKwh, currency)} per kWh for battery cost.
              Actual savings may change during rainy seasons, cloudy days, shading, changes in appliance usage, utility charges, battery sizing, inverter settings, and final installation design.
              Professional site assessment is recommended.
             </p>
