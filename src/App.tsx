@@ -56,12 +56,14 @@ function App() {
     results: CalculationResult;
     currency: string;
     costPerKw: number;
+    batteryCostPerKwh: number;
   }>({
     monthlyBill: 150,
     selectedAppliances: [],
     results: calculateEnergyResults(150, [], 'USD'),
     currency: 'USD',
     costPerKw: 900,
+    batteryCostPerKwh: 500,
   });
 
   const scrollToEstimator = useCallback(() => {
@@ -85,9 +87,17 @@ function App() {
       selectedAppliances: Appliance[],
       results: CalculationResult,
       currency: string,
-      costPerKw: number
+      costPerKw: number,
+      batteryCostPerKwh: number
     ) => {
-      setCalculationData({ monthlyBill, selectedAppliances, results, currency, costPerKw });
+      setCalculationData({
+        monthlyBill,
+        selectedAppliances,
+        results,
+        currency,
+        costPerKw,
+        batteryCostPerKwh,
+      });
     },
     []
   );
@@ -408,6 +418,7 @@ return () => window.removeEventListener('scroll', handleScroll);
           results={calculationData.results}
           currency={calculationData.currency}
           costPerKw={calculationData.costPerKw}
+          batteryCostPerKwh={calculationData.batteryCostPerKwh}
         />
         )}
 
@@ -448,7 +459,7 @@ return () => window.removeEventListener('scroll', handleScroll);
                 <li><a href="#lead-form" className="hover:text-eco-green transition-colors">Get Quote</a></li>
               </ul>
             </div>
-                
+                  
             <div>
               <h4 className="text-white font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-gray-500">
