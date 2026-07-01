@@ -15,9 +15,17 @@ type LeadCaptureProps = {
   results: CalculationResult;
   currency: string;
   costPerKw: number;
+  batteryCostPerKwh: number;
 };
 
-export function LeadCapture({ monthlyBill, selectedAppliances, results, currency,costPerKw, }: LeadCaptureProps) {
+export function LeadCapture({
+  monthlyBill,
+  selectedAppliances,
+  results,
+  currency,
+  costPerKw,
+  batteryCostPerKwh,
+}: LeadCaptureProps) {
   const [formData, setFormData] = useState<LeadFormData>({
     fullName: '',
     email: '',
@@ -27,9 +35,13 @@ export function LeadCapture({ monthlyBill, selectedAppliances, results, currency
     notes: '',
   });
   const [errors, setErrors] = useState<Partial<LeadFormData>>({});
-  const estimatedSystemCost = results.systemSizeKW * costPerKw;
+  const estimatedSolarSystemCost = results.systemSizeKW * costPerKw;
+  const estimatedBatteryCost = results.batteryCapacityKWh * batteryCostPerKwh;
+  const estimatedSystemCost = estimatedSolarSystemCost + estimatedBatteryCost;
+
   const annualSavings = results.monthlySavings * 12;
-  const expectedPaybackYears = annualSavings > 0 ? estimatedSystemCost / annualSavings : 0;
+  const expectedPaybackYears =
+  annualSavings > 0 ? estimatedSystemCost / annualSavings : 0;
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -87,6 +99,10 @@ export function LeadCapture({ monthlyBill, selectedAppliances, results, currency
     console.log('[LeadCapture] Monthly savings saved to Supabase:', payload.monthly_savings);
     console.log('[LeadCapture] Inserting into table: leads');
     console.log('[LeadCapture] Payload:', payload);
+    console.log('[LeadCapture] Solar/Inverter cost:', estimatedSolarSystemCost);
+    console.log('[LeadCapture] Battery bank cost:', estimatedBatteryCost);
+    console.log('[LeadCapture] Total hybrid system cost:', estimatedSystemCost);
+    console.log('[LeadCapture] Hybrid ROI years:', expectedPaybackYears);
 
     try {
       const { error } = await supabase.from('leads').insert(payload);
