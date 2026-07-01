@@ -7,7 +7,7 @@ import { Button } from './ui/Button';
 import { supabase } from '../lib/supabase';
 import { Appliance, CalculationResult, LeadFormData } from '../types';
 import { countryCodes } from '../data/appliances';
-import { formatCurrency, convertFromUSD } from '../data/currencies';
+import { formatCurrency } from '../data/currencies';
 
 type LeadCaptureProps = {
   monthlyBill: number;
@@ -112,9 +112,8 @@ export function LeadCapture({ monthlyBill, selectedAppliances, results, currency
     }
   };
 
-  // Format savings in selected currency
-  const savingsInCurrency = convertFromUSD(results.monthlySavingsUSD, currency);
-  const formattedSavings = formatCurrency(savingsInCurrency, currency);
+  // Use the same rounded savings value shown in the estimator result cards
+const formattedSavings = formatCurrency(results.monthlySavings, currency);
 
   return (
     <section id="contact" className="py-24 bg-dark-900">
