@@ -635,19 +635,28 @@ const estimatedSystemCost = estimatedSolarSystemCost + estimatedBatteryCost;
   return (
       <div className="space-y-6">
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 border border-white/10 mb-4">
-            <Zap className="w-4 h-4 text-eco-green" />
-            <span className="text-xs text-gray-400">Personalized Solar Estimate</span>
-          </div>
-    
-          <h3 className="text-2xl sm:text-3xl font-bold text-white">
-            Your Solar Recommendation
-          </h3>
-    
-          <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-            A hybrid solar estimate based on your monthly bill, selected appliances, and optimal peak summer sun conditions.
-          </p>
-        </div>
+  <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+    <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 border border-white/10">
+      <Zap className="w-4 h-4 text-eco-green" />
+      <span className="text-xs text-gray-400">Personalized Hybrid Solar Estimate</span>
+    </div>
+
+    <div className="inline-flex items-center gap-2 rounded-full border border-eco-amber/30 bg-eco-amber/10 px-4 py-2">
+      <span className="h-2 w-2 rounded-full bg-eco-amber" />
+      <span className="text-xs font-medium text-eco-amber">
+        Optimal Sun Month Assumption
+      </span>
+    </div>
+  </div>
+
+  <h3 className="text-2xl sm:text-3xl font-bold text-white">
+    Your Solar Recommendation
+  </h3>
+
+  <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
+    A hybrid solar estimate based on your monthly bill, selected appliances, peak summer sun, minimal rain, and properly sized battery backup.
+  </p>
+</div>
     
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 
@@ -671,6 +680,19 @@ const estimatedSystemCost = estimatedSolarSystemCost + estimatedBatteryCost;
           </GlassCard>
         </motion.div>
       ))}
+
+      <div className="col-span-2 md:col-span-3 lg:col-span-6">
+  <div className="rounded-2xl border border-eco-amber/20 bg-eco-amber/10 p-4 text-center">
+    <div className="text-sm font-semibold text-eco-amber">
+      Estimated Savings During Optimal Sun Months
+    </div>
+    <p className="mt-1 text-xs leading-relaxed text-gray-400">
+      These results assume peak summer conditions with strong sunlight, minimal rain,
+      and a properly installed hybrid solar system that can power daytime loads and recharge the battery for night use.
+      Rainy seasons, shading, utility fees, inverter limits, and appliance usage changes can reduce actual savings.
+    </p>
+  </div>
+</div>
 
       {/* Grid Independence */}
       <motion.div
