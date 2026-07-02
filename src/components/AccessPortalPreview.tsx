@@ -16,7 +16,15 @@ import { supabase } from '../lib/supabase';
 
 type LoginPortal = 'admin' | 'subscriber' | null;
 
-export function AccessPortalPreview() {
+type AccessPortalPreviewProps = {
+  isAdminAuthenticated: boolean;
+  onAdminLoginSuccess: (email: string) => void;
+};
+
+export function AccessPortalPreview({
+  isAdminAuthenticated,
+  onAdminLoginSuccess,
+}: AccessPortalPreviewProps) {
   const [activePortal, setActivePortal] = useState<LoginPortal>(null);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -32,6 +40,25 @@ export function AccessPortalPreview() {
         detail: requestType,
       })
     );
+  };
+
+  const handleAdminPortalOpen = () => {
+    setAdminError('');
+    setAdminSuccess('');
+    setAdminPassword('');
+  
+    if (isAdminAuthenticated) {
+      document
+        .getElementById('admin-dashboard-preview')
+        ?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+  
+      return;
+    }
+  
+    setActivePortal('admin');
   };
 
   const handleAdminLogin = async () => {
@@ -69,8 +96,16 @@ export function AccessPortalPreview() {
         return;
       }
   
-      setAdminSuccess('Admin login successful. Your secure session is active.');
-      setAdminPassword('');
+      const signedInEmail =
+  data.user.email ?? adminEmail.trim();
+
+setAdminSuccess(
+  'Admin login successful. Your secure session is active.'
+);
+
+setAdminPassword('');
+onAdminLoginSuccess(signedInEmail);
+
     } catch (error) {
       console.error('[Admin Login] Unexpected error:', error);
       setAdminError('Something went wrong while signing in.');
@@ -84,7 +119,7 @@ export function AccessPortalPreview() {
       title: 'Admin Login',
       badge: 'Owner Access',
       description:
-        'Future protected access for managing EcoStep leads, subscribers, pricing settings, and white-label client versions.',
+      'Secure protected access for managing EcoStep leads, subscribers, pricing settings, and white-label client versions.',
       button: 'Admin Access Coming Soon',
       glow: 'green',
     },
@@ -172,10 +207,10 @@ export function AccessPortalPreview() {
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
   <button
     type="button"
-    onClick={() => setActivePortal('admin')}
+    onClick={handleAdminPortalOpen}
     className="rounded-xl border border-eco-green/30 bg-eco-green/10 px-4 py-3 text-sm font-semibold text-eco-green transition-all hover:bg-eco-green hover:text-dark-900"
   >
-    Admin Login
+    {isAdminAuthenticated ? 'Admin Session Active' : 'Admin Login'}
   </button>
 
   <a
