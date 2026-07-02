@@ -474,7 +474,11 @@ return () => window.removeEventListener('scroll', handleScroll);
         <DemoAccessBanner />
 
         <div ref={estimatorRef}>
-          <EnergyEstimator onCalculate={handleCalculate} />
+        <EnergyEstimator
+           isAdminAuthenticated={isAdminAuthenticated}
+           isAdminChecking={isAdminChecking}
+           onCalculate={handleCalculate}
+        />
         </div>
 
         <EstimateDisclaimer />
