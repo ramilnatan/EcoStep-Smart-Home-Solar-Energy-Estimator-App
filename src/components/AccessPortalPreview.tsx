@@ -12,11 +12,17 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
+import { supabase } from '../lib/supabase';
 
 type LoginPortal = 'admin' | 'subscriber' | null;
 
 export function AccessPortalPreview() {
   const [activePortal, setActivePortal] = useState<LoginPortal>(null);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminError, setAdminError] = useState('');
+  const [adminSuccess, setAdminSuccess] = useState('');
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
 
   const handleRequestAccess = (requestType: string) => {
     localStorage.setItem('ecostep_request_type', requestType);
@@ -26,6 +32,51 @@ export function AccessPortalPreview() {
         detail: requestType,
       })
     );
+  };
+
+  const handleAdminLogin = async () => {
+    setAdminError('');
+    setAdminSuccess('');
+  
+    if (!adminEmail.trim() || !adminPassword) {
+      setAdminError('Please enter your admin email and password.');
+      return;
+    }
+  
+    setIsAdminLoading(true);
+  
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: adminEmail.trim(),
+        password: adminPassword,
+      });
+  
+      if (error || !data.user) {
+        setAdminError(error?.message || 'Unable to sign in.');
+        return;
+      }
+  
+      const { data: adminRecord, error: roleError } = await supabase
+        .from('admin_users')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+  
+      if (roleError || !adminRecord) {
+        await supabase.auth.signOut();
+        setAdminError('This account does not have EcoStep admin access.');
+        return;
+      }
+  
+      setAdminSuccess('Admin login successful. Your secure session is active.');
+      setAdminPassword('');
+    } catch (error) {
+      console.error('[Admin Login] Unexpected error:', error);
+      setAdminError('Something went wrong while signing in.');
+    } finally {
+      setIsAdminLoading(false);
+    }
   };
 
   const portalContent = {
@@ -114,8 +165,8 @@ export function AccessPortalPreview() {
               </div>
 
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400">
-                Real admin authentication will be added in a future phase using
-                Supabase Auth and protected roles.
+                  Secure admin authentication is now connected using Supabase Auth and
+                  the EcoStep admin role table.
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -124,7 +175,7 @@ export function AccessPortalPreview() {
     onClick={() => setActivePortal('admin')}
     className="rounded-xl border border-eco-green/30 bg-eco-green/10 px-4 py-3 text-sm font-semibold text-eco-green transition-all hover:bg-eco-green hover:text-dark-900"
   >
-    Admin Login Preview
+    Admin Login
   </button>
 
   <a
@@ -259,9 +310,18 @@ export function AccessPortalPreview() {
                     type="email"
                     placeholder={
                       activePortal === 'admin'
-                        ? 'admin@ecostep.demo'
+                        ? 'Enter your admin email'
                         : 'company@example.com'
                     }
+                    value={activePortal === 'admin' ? adminEmail : ''}
+                      onChange={(e) => {
+                          if (activePortal === 'admin') {
+                          setAdminEmail(e.target.value);
+                          setAdminError('');
+                          setAdminSuccess('');
+                              }
+                           }}
+                    disabled={activePortal !== 'admin'}
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-gray-600"
                   />
                 </div>
@@ -274,26 +334,84 @@ export function AccessPortalPreview() {
                 <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                   <KeyRound className="h-4 w-4 text-gray-500" />
                   <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full bg-transparent text-sm text-white outline-none placeholder:text-gray-600"
-                  />
+  type="password"
+  placeholder="••••••••"
+  value={activePortal === 'admin' ? adminPassword : ''}
+  onChange={(e) => {
+    if (activePortal === 'admin') {
+      setAdminPassword(e.target.value);
+      setAdminError('');
+      setAdminSuccess('');
+    }
+  }}
+  disabled={activePortal !== 'admin'}
+  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-gray-600 disabled:cursor-not-allowed"
+/>
                 </div>
               </label>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-eco-amber/20 bg-eco-amber/10 p-3 text-sm text-eco-amber">
-              Login UI preview only. Real authentication will be connected later
-              using Supabase Auth, roles, and protected routes.
-            </div>
-
-            <button
-              type="button"
-              disabled
-              className="mt-6 w-full cursor-not-allowed rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-gray-500"
-            >
-              {selectedPortal.button}
-            </button>
+            {activePortal === 'admin' ? (
+              <>
+                <div className="mt-4 rounded-2xl border border-eco-green/20 bg-eco-green/10 p-3 text-sm text-gray-300">
+                  Secure admin login using Supabase Auth and EcoStep role verification.
+                </div>
+            
+                {adminError && (
+                  <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+                    {adminError}
+                  </div>
+                )}
+            
+                {adminSuccess && (
+                  <div className="mt-3 rounded-xl border border-eco-green/30 bg-eco-green/10 p-3 text-sm text-eco-green">
+                    {adminSuccess}
+                  </div>
+                )}
+            
+                {!adminSuccess ? (
+                  <button
+                    type="button"
+                    onClick={handleAdminLogin}
+                    disabled={isAdminLoading}
+                    className="mt-6 w-full rounded-xl bg-eco-green px-4 py-3 text-sm font-semibold text-dark-900 transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isAdminLoading ? 'Signing In...' : 'Sign In as Admin'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePortal(null);
+            
+                      setTimeout(() => {
+                        document
+                          .getElementById('admin-dashboard-preview')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }}
+                    className="mt-6 w-full rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-4 py-3 text-sm font-semibold text-dark-900 transition-all hover:scale-[1.02]"
+                  >
+                    Continue to Admin Dashboard
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="mt-4 rounded-2xl border border-eco-amber/20 bg-eco-amber/10 p-3 text-sm text-eco-amber">
+                  Subscriber login is still preview-only. Real subscriber accounts will be
+                  added after the admin system is completed.
+                </div>
+            
+                <button
+                  type="button"
+                  disabled
+                  className="mt-6 w-full cursor-not-allowed rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-gray-500"
+                >
+                  Subscriber Access Coming Soon
+                </button>
+              </>
+            )}
 
             {activePortal === 'subscriber' && (
               <a
