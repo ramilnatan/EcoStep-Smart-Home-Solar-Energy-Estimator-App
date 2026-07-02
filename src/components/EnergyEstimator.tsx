@@ -38,6 +38,8 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 type EnergyEstimatorProps = {
+  isAdminAuthenticated: boolean;
+  isAdminChecking: boolean;
   onCalculate: (
     monthlyBill: number,
     selectedAppliances: Appliance[],
@@ -50,7 +52,11 @@ type EnergyEstimatorProps = {
 
 const DEMO_APPLIANCE_LIMIT = 4;
 
-export function EnergyEstimator({ onCalculate }: EnergyEstimatorProps) {
+export function EnergyEstimator({
+  isAdminAuthenticated,
+  isAdminChecking,
+  onCalculate,
+}: EnergyEstimatorProps) {
   const [currency, setCurrency] = useState<string>('USD');
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [selectedAppliances, setSelectedAppliances] = useState<Appliance[]>([]);
@@ -139,6 +145,15 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
         : app
     )
   );
+};
+
+const scrollToCustomBlueprint = () => {
+  document
+    .getElementById('custom-blueprint')
+    ?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
 };
 
   return (
@@ -459,6 +474,40 @@ const updateApplianceWatts = (applianceId: string, watts: number) => {
              batteryCostPerKwh={batteryCostPerKwh}
              setBatteryCostPerKwh={setBatteryCostPerKwh}
             />
+         
+         {!isAdminChecking && !isAdminAuthenticated && (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay: 0.2 }}
+    className="mt-16"
+  >
+    <GlassCard glow="green" className="p-8 text-center">
+      <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-eco-green/20 bg-eco-green/10 px-4 py-2 text-xs font-medium text-eco-green">
+        <Zap className="h-4 w-4" />
+        Your Estimate Is Ready
+      </div>
+
+      <h3 className="mt-5 text-2xl font-bold text-white sm:text-3xl">
+        Get Your Custom System Blueprint
+      </h3>
+
+      <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
+        Receive your personalized solar system summary, ROI details, and
+        recommendations based on your selected appliances and backup needs.
+      </p>
+
+      <button
+        type="button"
+        onClick={scrollToCustomBlueprint}
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-6 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105"
+      >
+        Get My Custom System Blueprint
+        <ArrowRight className="h-4 w-4" />
+      </button>
+    </GlassCard>
+  </motion.div>
+)}
 
           </motion.div>
         )}
@@ -969,10 +1018,10 @@ const estimatedSystemCost = estimatedSolarSystemCost + estimatedBatteryCost;
             </div>
 
             <div className="rounded-xl bg-white/5 p-4 text-center">
-              <div className="text-xl font-bold text-eco-green">
-                {expectedPaybackYears.toFixed(1)} yrs
-              </div>
-              <div className="text-xs text-gray-500">Expected Payback</div>
+               <div className="text-xl font-bold text-eco-green">
+               {Math.round(results.gridIndependencePercent)}%
+               </div>
+               <div className="text-xs text-gray-500">Grid Independence</div>
             </div>
           </div>
 
