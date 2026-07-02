@@ -1,6 +1,22 @@
 import { motion } from 'framer-motion';
-import { BarChart3, Crown, Users, Clock, ArrowRight } from 'lucide-react';
+import {
+  BarChart3,
+  Crown,
+  Users,
+  Clock,
+  ArrowRight,
+  Lock,
+  LogOut,
+  ShieldCheck,
+} from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
+
+type AdminDashboardPreviewProps = {
+  isAdminAuthenticated: boolean;
+  isAdminChecking: boolean;
+  adminEmail: string;
+  onLogout: () => void;
+};
 
 const stats = [
   {
@@ -51,7 +67,70 @@ const requests = [
   },
 ];
 
-export function AdminDashboardPreview() {
+export function AdminDashboardPreview({
+  isAdminAuthenticated,
+  isAdminChecking,
+  adminEmail,
+  onLogout,
+}: AdminDashboardPreviewProps) {
+
+  if (isAdminChecking) {
+    return (
+      <section
+        id="admin-dashboard-preview"
+        className="relative bg-dark-900 py-24 scroll-mt-24"
+      >
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+          <GlassCard glow="green" className="p-8">
+            <ShieldCheck className="mx-auto h-12 w-12 text-eco-green" />
+  
+            <h2 className="mt-5 text-3xl font-bold text-white">
+              Checking Admin Session
+            </h2>
+  
+            <p className="mt-3 text-gray-400">
+              EcoStep is verifying your secure Supabase session and admin role.
+            </p>
+          </GlassCard>
+        </div>
+      </section>
+    );
+  }
+
+  if (!isAdminAuthenticated) {
+    return (
+      <section
+        id="admin-dashboard-preview"
+        className="relative bg-dark-900 py-24 scroll-mt-24"
+      >
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+          <GlassCard glow="amber" className="p-8">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-eco-amber/10">
+              <Lock className="h-8 w-8 text-eco-amber" />
+            </div>
+  
+            <h2 className="mt-6 text-3xl font-bold text-white">
+              Admin Access Required
+            </h2>
+  
+            <p className="mx-auto mt-3 max-w-xl text-gray-400">
+              Sign in with a verified EcoStep administrator account to access
+              business requests and admin tools.
+            </p>
+  
+            <a
+              href="#access-portal"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-5 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105"
+            >
+              Open Admin Login
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </GlassCard>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="admin-dashboard-preview" className="relative bg-dark-900 py-24 scroll-mt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -64,7 +143,7 @@ export function AdminDashboardPreview() {
         >
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2">
             <BarChart3 className="h-4 w-4 text-eco-green" />
-            <span className="text-xs text-gray-400">Admin Dashboard Preview</span>
+            <span className="text-xs text-gray-400">Protected Admin Dashboard</span>
           </div>
 
           <h2 className="text-4xl font-bold text-white sm:text-5xl">
@@ -75,10 +154,35 @@ export function AdminDashboardPreview() {
           </h2>
 
           <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-400">
-            Future admin access will help manage home quote leads, subscription
-            inquiries, white-label requests, and trial activations from one place.
+          Secure EcoStep owner access for managing home quote leads,
+          subscription inquiries, white-label requests, and business activity.
           </p>
         </motion.div>
+
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-eco-green/20 bg-eco-green/10 p-4 sm:flex-row">
+  <div className="flex items-center gap-3">
+    <ShieldCheck className="h-5 w-5 text-eco-green" />
+
+    <div>
+      <div className="text-sm font-semibold text-white">
+        Secure Admin Session Active
+      </div>
+
+      <div className="text-xs text-gray-400">
+        Signed in as {adminEmail || 'EcoStep Administrator'}
+      </div>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    onClick={onLogout}
+    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-red-500/10 hover:text-red-400"
+  >
+    <LogOut className="h-4 w-4" />
+    Sign Out
+  </button>
+</div>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((item, index) => (
@@ -126,7 +230,7 @@ export function AdminDashboardPreview() {
               </div>
 
               <div className="inline-flex rounded-full border border-eco-amber/20 bg-eco-amber/10 px-3 py-1 text-xs text-eco-amber">
-                Preview UI only
+                Protected Session
               </div>
             </div>
 
@@ -154,7 +258,7 @@ export function AdminDashboardPreview() {
         </motion.div>
 
         <div className="mt-6 text-center text-xs text-gray-500">
-          Admin dashboard is a visual preview only. Real protected access will be connected later using Supabase Auth.
+          Protected admin access is active. Real Supabase lead data will be connected in the next lesson.
         </div>
       </div>
     </section>
