@@ -160,21 +160,62 @@ const formattedSavings = formatCurrency(results.monthlySavings, currency);
         >
           <GlassCard glow="amber" className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Summary of selection */}
-              <div className="grid grid-cols-3 gap-4 mb-8 pb-8 border-b border-white/10">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-eco-green">{results.systemSizeKW}kW</div>
-                  <div className="text-xs text-gray-500">System Size</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-eco-cyan">{results.batteryCapacityKWh}kWh</div>
-                  <div className="text-xs text-gray-500">Battery</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-eco-amber">{expectedPaybackYears.toFixed(1)} yrs</div>
-                  <div className="text-xs text-gray-500">ROI</div>
-                </div>
-              </div>
+              {/* Hybrid estimate summary */}
+<div className="mb-8 border-b border-white/10 pb-8">
+  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="rounded-xl bg-white/5 p-4 text-center">
+      <div className="text-xl font-bold text-eco-green">
+        {results.systemSizeKW} kW
+      </div>
+      <div className="mt-1 text-xs text-gray-500">
+        Solar System
+      </div>
+    </div>
+
+    <div className="rounded-xl bg-white/5 p-4 text-center">
+      <div className="text-xl font-bold text-eco-cyan">
+        {results.batteryCapacityKWh} kWh
+      </div>
+      <div className="mt-1 text-xs text-gray-500">
+        Battery Capacity
+      </div>
+    </div>
+
+    <div className="rounded-xl bg-white/5 p-4 text-center">
+      <div className="text-xl font-bold text-eco-amber">
+        {expectedPaybackYears.toFixed(1)} yrs
+      </div>
+      <div className="mt-1 text-xs text-gray-500">
+        Hybrid ROI
+      </div>
+    </div>
+
+    <div className="rounded-xl bg-white/5 p-4 text-center">
+      <div className="text-xl font-bold text-eco-cyan">
+        {formattedSavings}
+      </div>
+      <div className="mt-1 text-xs text-gray-500">
+        Optimal Savings
+      </div>
+    </div>
+
+    <div className="col-span-2 rounded-xl bg-white/5 p-4 text-center sm:col-span-1">
+      <div className="text-xl font-bold text-eco-green">
+        {results.gridIndependencePercent}%
+      </div>
+      <div className="mt-1 text-xs text-gray-500">
+        Grid Independence
+      </div>
+    </div>
+  </div>
+
+  <div className="mt-4 rounded-xl border border-eco-amber/20 bg-eco-amber/10 p-3 text-center">
+    <p className="text-xs leading-relaxed text-gray-400">
+      Estimate based on optimal peak summer sun, minimal rain, and a properly
+      sized hybrid solar system with battery backup.
+    </p>
+  </div>
+</div>
 
               {/* Form Fields */}
               <div className="grid md:grid-cols-2 gap-6">
