@@ -18,6 +18,7 @@ import { SaaSRoadmap } from './components/SaaSRoadmap';
 import { EstimateDisclaimer } from './components/EstimateDisclaimer';
 import { WhyEcoStep } from './components/WhyEcoStep';
 import { FAQSection } from './components/FAQSection';
+import { supabase } from './lib/supabase';
 
 
 const primaryNavItems = [
@@ -50,6 +51,9 @@ function App() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isAdminChecking, setIsAdminChecking] = useState(true);
+  const [adminEmail, setAdminEmail] = useState('');
   const [calculationData, setCalculationData] = useState<{
     monthlyBill: number;
     selectedAppliances: Appliance[];
@@ -65,6 +69,36 @@ function App() {
     costPerKw: 900,
     batteryCostPerKwh: 500,
   });
+
+  const refreshAdminState = useCallback(
+    async (userId?: string, email?: string | null) => {
+      if (!userId) {
+        setIsAdminAuthenticated(false);
+        setAdminEmail('');
+        setIsAdminChecking(false);
+        return;
+      }
+  
+      const { data: adminRecord, error } = await supabase
+        .from('admin_users')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+  
+      if (error || !adminRecord) {
+        setIsAdminAuthenticated(false);
+        setAdminEmail('');
+        setIsAdminChecking(false);
+        return;
+      }
+  
+      setIsAdminAuthenticated(true);
+      setAdminEmail(email ?? '');
+      setIsAdminChecking(false);
+    },
+    []
+  );
 
   const scrollToEstimator = useCallback(() => {
     if (!estimatorRef.current) return;
@@ -104,6 +138,32 @@ function App() {
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAdminLoginSuccess = (email: string) => {
+    setIsAdminAuthenticated(true);
+    setAdminEmail(email);
+    setIsAdminChecking(false);
+  };
+  
+  const handleAdminLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+  
+    if (error) {
+      console.error('[Admin Logout] Error:', error);
+      return;
+    }
+  
+    setIsAdminAuthenticated(false);
+    setAdminEmail('');
+    setIsAdminChecking(false);
+  
+    document
+      .getElementById('access-portal')
+      ?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
   };
 
   const scrollToSection = useCallback((sectionId: string) => {
@@ -156,6 +216,34 @@ function App() {
       document.removeEventListener('keydown', handleEscapeKey);
     };
   }, []);
+
+  useEffect(() => {
+    const checkCurrentSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+  
+      await refreshAdminState(
+        session?.user.id,
+        session?.user.email
+      );
+    };
+  
+    void checkCurrentSession();
+  
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void refreshAdminState(
+        session?.user.id,
+        session?.user.email
+      );
+    });
+  
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [refreshAdminState]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -395,9 +483,17 @@ return () => window.removeEventListener('scroll', handleScroll);
 
         <FullAccessGate />
 
-        <AccessPortalPreview />
+        <AccessPortalPreview
+         isAdminAuthenticated={isAdminAuthenticated}
+         onAdminLoginSuccess={handleAdminLoginSuccess}
+        />
 
-        <AdminDashboardPreview />
+        <AdminDashboardPreview
+         isAdminAuthenticated={isAdminAuthenticated}
+         isAdminChecking={isAdminChecking}
+         adminEmail={adminEmail}
+         onLogout={handleAdminLogout}
+         />
 
         <SubscriberDashboardPreview />
 
