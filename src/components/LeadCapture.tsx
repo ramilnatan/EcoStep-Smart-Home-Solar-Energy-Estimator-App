@@ -1,376 +1,1068 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
-import { User, Mail, Phone, MessageSquare, Check, Loader2, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  Refrigerator,
+  Lightbulb,
+  Wind,
+  Monitor,
+  Droplets,
+  Wifi,
+  Tv,
+  ChefHat,
+  Zap,
+  DollarSign,
+  WashingMachine,
+  Fan,
+  Lock,
+  X,
+  ArrowRight,
+} from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
-import { Input } from './ui/Input';
-import { Button } from './ui/Button';
-import { supabase } from '../lib/supabase';
-import { Appliance, CalculationResult, LeadFormData } from '../types';
-import { countryCodes } from '../data/appliances';
-import { formatCurrency } from '../data/currencies';
+import { Slider } from './ui/Slider';
+import { appliances } from '../data/appliances';
+import { currencies, formatCurrency } from '../data/currencies';
+import { Appliance, CalculationResult } from '../types';
+import { calculateEnergyResults } from '../utils/calculations';
 
-type LeadCaptureProps = {
-  monthlyBill: number;
-  selectedAppliances: Appliance[];
-  results: CalculationResult;
-  currency: string;
-  costPerKw: number;
-  batteryCostPerKwh: number;
+const iconMap: Record<string, React.ElementType> = {
+  Refrigerator,
+  Lightbulb,
+  Wind,
+  Monitor,
+  Droplets,
+  Wifi,
+  Tv,
+  ChefHat,
+  WashingMachine,
+  Fan,
 };
 
-export function LeadCapture({
-  monthlyBill,
-  selectedAppliances,
-  results,
-  currency,
-  costPerKw,
-  batteryCostPerKwh,
-}: LeadCaptureProps) {
-  const [formData, setFormData] = useState<LeadFormData>({
-    fullName: '',
-    email: '',
-    phone: '',
-    countryCode: '+1',
-    currency: currency,
-    notes: '',
-  });
-  const [errors, setErrors] = useState<Partial<LeadFormData>>({});
-  const estimatedSolarSystemCost = results.systemSizeKW * costPerKw;
-  const estimatedBatteryCost = results.batteryCapacityKWh * batteryCostPerKwh;
-  const estimatedSystemCost = estimatedSolarSystemCost + estimatedBatteryCost;
+type EnergyEstimatorProps = {
+  isAdminAuthenticated: boolean;
+  isAdminChecking: boolean;
+  onCalculate: (
+    monthlyBill: number,
+    selectedAppliances: Appliance[],
+    results: CalculationResult,
+    currency: string,
+    costPerKw: number,
+    batteryCostPerKwh: number
+  ) => void;
+};
 
-  const annualSavings = results.monthlySavings * 12;
-  const expectedPaybackYears =
-  annualSavings > 0 ? estimatedSystemCost / annualSavings : 0;
-  const [isLoading, setIsLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+const DEMO_APPLIANCE_LIMIT = 4;
 
-  const validate = (): boolean => {
-    const newErrors: Partial<LeadFormData> = {};
+export function EnergyEstimator({
+  isAdminAuthenticated,
+  isAdminChecking,
+  onCalculate,
+}: EnergyEstimatorProps) {
+  const [currency, setCurrency] = useState<string>('USD');
+  const [monthlyBill, setMonthlyBill] = useState(150);
+  const [selectedAppliances, setSelectedAppliances] = useState<Appliance[]>([]);
+  const [showDemoLimitModal, setShowDemoLimitModal] = useState(false);
+  const [panelWattage, setPanelWattage] = useState(550);
+  const [costPerKw, setCostPerKw] = useState(900);
+  const [batteryCostPerKwh, setBatteryCostPerKwh] = useState(500);
+  const [results, setResults] = useState<CalculationResult | null>(null);
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
-    }
+  const currentCurrency = currencies.find((c) => c.code === currency) || currencies[0];
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
+  useEffect(() => {
+    const calculationResults = calculateEnergyResults(monthlyBill, selectedAppliances, currency);
+    setResults(calculationResults);
+    onCalculate(
+      monthlyBill,
+      selectedAppliances,
+      calculationResults,
+      currency,
+      costPerKw,
+      batteryCostPerKwh
+    );
+  }, [monthlyBill, selectedAppliances, currency, costPerKw, batteryCostPerKwh, onCalculate]);
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^\d{7,15}$/.test(formData.phone.replace(/\D/g, ''))) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validate()) return;
-
-    setIsLoading(true);
-
-    const payload = {
-      full_name: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      country_code: formData.countryCode,
-      currency: currency,
-      monthly_bill: monthlyBill,
-      selected_appliances: selectedAppliances,
-      estimated_kw: results.systemSizeKW,
-      estimated_battery: results.batteryCapacityKWh,
-      daily_consumption: results.dailyConsumptionKWh,
-      backup_runtime: results.backupRuntimeHours,
-      monthly_savings: results.monthlySavings,
-      roi_years: expectedPaybackYears,
-      grid_independence: results.gridIndependencePercent,
-      notes: formData.notes,
-      status: 'new',
-    };
-
-    console.log('[LeadCapture] Selected currency:', currency);
-    console.log('[LeadCapture] Monthly savings displayed (UI):', results.monthlySavings);
-    console.log('[LeadCapture] Monthly savings saved to Supabase:', payload.monthly_savings);
-    console.log('[LeadCapture] Inserting into table: leads');
-    console.log('[LeadCapture] Payload:', payload);
-    console.log('[LeadCapture] Solar/Inverter cost:', estimatedSolarSystemCost);
-    console.log('[LeadCapture] Battery bank cost:', estimatedBatteryCost);
-    console.log('[LeadCapture] Total hybrid system cost:', estimatedSystemCost);
-    console.log('[LeadCapture] Hybrid ROI years:', expectedPaybackYears);
-
-    try {
-      const { error } = await supabase.from('leads').insert(payload);
-
-      console.log('[LeadCapture] Supabase response error:', error);
-
-      if (!error) {
-        setShowModal(true);
-        setFormData({
-          fullName: '',
-          email: '',
-          phone: '',
-          countryCode: '+1',
-          currency: currency,
-          notes: '',
-        });
-      } else {
-        console.error('[LeadCapture] Insert failed:', error);
-        setErrors({ notes: `DB Error [${error.code ?? 'unknown'}]: ${error.message}` });
-      }
-    } finally {
-      setIsLoading(false);
+  // Reset monthly bill when currency changes to fit the new range
+  const handleCurrencyChange = (newCurrency: string) => {
+    const newCurrencyData = currencies.find((c) => c.code === newCurrency) || currencies[0];
+  
+    setCurrency(newCurrency);
+    setMonthlyBill(newCurrencyData.minBill);
+  
+    if (newCurrency === 'PHP') {
+      setCostPerKw(45000);
+      setBatteryCostPerKwh(20000);
+    } else {
+      setCostPerKw(900);
+      setBatteryCostPerKwh(500);
     }
   };
 
-  // Use the same rounded savings value shown in the estimator result cards
-const formattedSavings = formatCurrency(results.monthlySavings, currency);
+  const toggleAppliance = (appliance: Appliance) => {
+    const isAlreadySelected = selectedAppliances.some(
+      (app) => app.id === appliance.id
+    );
+  
+    if (isAlreadySelected) {
+      setSelectedAppliances((prev) =>
+        prev.filter((app) => app.id !== appliance.id)
+      );
+      return;
+    }
+  
+    if (selectedAppliances.length >= DEMO_APPLIANCE_LIMIT) {
+      setShowDemoLimitModal(true);
+      return;
+    }
+  
+    setSelectedAppliances((prev) => [...prev, appliance]);
+  };
+
+  const updateApplianceQuantity = (applianceId: string, change: number) => {
+    setSelectedAppliances((prev) =>
+      prev.map((app) =>
+        app.id === applianceId
+          ? { ...app, quantity: Math.max(1, (app.quantity ?? 1) + change) }
+          : app
+      )
+    );
+  };
+
+  const updateApplianceHours = (applianceId: string, change: number) => {
+    setSelectedAppliances((prev) =>
+      prev.map((app) =>
+        app.id === applianceId
+    ? { ...app, hoursPerDay: Math.max(1, Math.min(24, app.hoursPerDay + change)) }
+    : app
+  )
+);
+};
+
+const updateApplianceWatts = (applianceId: string, watts: number) => {
+  setSelectedAppliances((prev) =>
+    prev.map((app) =>
+      app.id === applianceId
+        ? { ...app, watts: Math.max(1, watts) }
+        : app
+    )
+  );
+};
+
+const scrollToCustomBlueprint = () => {
+  document
+    .getElementById('custom-blueprint')
+    ?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+};
 
   return (
-    <section id="contact" className="py-24 bg-dark-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="estimator" className="relative bg-dark-900 py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            Get Your Custom{' '}
-            <span className="text-eco-amber">System Blueprint</span>
+            Customize Your{' '}
+            <span className="text-eco-green">Energy Profile</span>
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Receive a detailed ROI report and personalized system recommendation from our energy experts.
+            Adjust your monthly bill and select your appliances to get a personalized solar system recommendation.
           </p>
         </motion.div>
 
-        {/* Form Card */}
+        {/* Currency Selector & Monthly Bill Slider */}
         <motion.div
+          className="max-w-2xl mx-auto mb-24"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <GlassCard glow="amber" className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Hybrid estimate summary */}
-<div className="mb-8 border-b border-white/10 pb-8">
-  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-    <div className="rounded-xl bg-white/5 p-4 text-center">
-      <div className="text-xl font-bold text-eco-green">
-        {results.systemSizeKW} kW
-      </div>
-      <div className="mt-1 text-xs text-gray-500">
-        Solar System
+          <GlassCard glow="green" className="p-8">
+            {/* Currency Selector */}
+            <div className="mb-8">
+              <label className="block text-sm font-medium text-gray-300 mb-3">
+                Select Your Currency
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {currencies.map((curr) => (
+                  <motion.button
+                    key={curr.code}
+                    onClick={() => handleCurrencyChange(curr.code)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
+                      transition-all duration-300
+                      ${currency === curr.code
+                        ? 'bg-eco-green/20 border-2 border-eco-green text-eco-green'
+                        : 'bg-white/5 border border-white/10 text-gray-400 hover:border-white/30'
+                      }
+                    `}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>{curr.symbol}</span>
+                    <span className="hidden sm:inline">{curr.code}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Monthly Bill Slider */}
+            <Slider
+              value={monthlyBill}
+              onChange={setMonthlyBill}
+              min={currentCurrency.minBill}
+              max={currentCurrency.maxBill}
+              step={currentCurrency.step}
+              label="Monthly Electric Bill"
+              formatValue={(v) => formatCurrency(v, currency)}
+            />
+          </GlassCard>
+        </motion.div>
+
+        {/* Appliance Selection */}
+        <motion.div
+          className="mb-24 pt-8"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <div className="mb-8 text-center">
+  <h3 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+    <Zap className="w-6 h-6 text-eco-cyan" />
+    Select Your Appliances
+  </h3>
+
+  <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-gray-400">
+    <span className="h-2 w-2 rounded-full bg-eco-green" />
+    <span>
+      Public Demo • {selectedAppliances.length}/{DEMO_APPLIANCE_LIMIT} appliances selected
+    </span>
+  </div>
+
+  <p className="mt-3 text-xs text-gray-500">
+    Full access unlocks unlimited appliances, branded reports, and company lead capture.
+  </p>
+</div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {appliances.map((appliance, index) => {
+              const Icon = iconMap[appliance.icon] || Zap;
+              const isSelected = selectedAppliances.some((a) => a.id === appliance.id);
+              const selectedAppliance = selectedAppliances.find((a) => a.id === appliance.id);
+              const displayQuantity = selectedAppliance?.quantity ?? appliance.quantity ?? 1;
+              const displayHours = selectedAppliance?.hoursPerDay ?? appliance.hoursPerDay;
+              const displayWatts = selectedAppliance?.watts ?? appliance.watts;
+
+              return (
+                <motion.button
+                  key={appliance.id}
+                  onClick={() => toggleAppliance(appliance)}
+                  className="relative group"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <GlassCard
+                    hover
+                    glow={isSelected ? 'green' : 'none'}
+                    className={`p-4 h-full transition-all duration-300 ${
+                      isSelected
+                        ? 'border-eco-green/50 shadow-[0_0_30px_rgba(34,197,94,0.3)]'
+                        : ''
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      {/* Icon Container */}
+                      <div
+                        className={`
+                          w-14 h-14 rounded-xl flex items-center justify-center
+                          transition-all duration-300
+                          ${isSelected ? 'bg-eco-green/20' : 'bg-white/5'}
+                        `}
+                        >
+                        <Icon
+                          className={`w-7 h-7 transition-colors ${
+                            isSelected ? 'text-eco-green' : 'text-gray-400'
+                          }`}
+                        />
+                      </div>
+                                       
+                       {/* Name */}
+
+<div className="text-center w-full">
+  <div className="text-sm font-medium text-white">{appliance.name}</div>
+
+  {!isSelected ? (
+    <div className="mt-2 text-xs text-gray-500">
+      <div>{displayWatts}W • Qty {displayQuantity}</div>
+      <div>{displayHours} hrs/day</div>
+      <div className="mt-2 text-[10px] text-eco-green">
+        Click to customize
       </div>
     </div>
-
-    <div className="rounded-xl bg-white/5 p-4 text-center">
-      <div className="text-xl font-bold text-eco-cyan">
-        {results.batteryCapacityKWh} kWh
+  ) : (
+    <div className="mt-3 space-y-2 text-xs text-gray-500">
+      <div
+        className="flex items-center justify-center gap-1"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <input
+          type="number"
+          min="1"
+          value={displayWatts}
+          onChange={(e) => updateApplianceWatts(appliance.id, Number(e.target.value))}
+          className="w-16 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-green"
+        />
+        <span>W</span>
       </div>
-      <div className="mt-1 text-xs text-gray-500">
-        Battery Capacity
+
+      {appliance.id === 'ac' && (
+        <div
+          className="flex items-center justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => updateApplianceWatts(appliance.id, 674)}
+            className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+          >
+            1 HP
+          </button>
+
+          <button
+            type="button"
+            onClick={() => updateApplianceWatts(appliance.id, 1011)}
+            className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+          >
+            1.5 HP
+          </button>
+
+          <button
+            type="button"
+            onClick={() => updateApplianceWatts(appliance.id, 1348)}
+            className="rounded bg-dark-700 px-2 py-1 text-[10px] text-white hover:bg-dark-600"
+          >
+            2 HP
+          </button>
+        </div>
+      )}
+
+      <div
+        className="flex items-center justify-center gap-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => updateApplianceQuantity(appliance.id, -1)}
+          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+        >
+          -
+        </button>
+
+        <span>Qty: {displayQuantity}</span>
+
+        <button
+          type="button"
+          onClick={() => updateApplianceQuantity(appliance.id, 1)}
+          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+        >
+          +
+        </button>
+      </div>
+
+      <div
+        className="flex items-center justify-center gap-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => updateApplianceHours(appliance.id, -1)}
+          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+        >
+          -
+        </button>
+
+        <span>{displayHours} hrs/day</span>
+
+        <button
+          type="button"
+          onClick={() => updateApplianceHours(appliance.id, 1)}
+          className="w-6 h-6 rounded-full bg-dark-700 text-white hover:bg-dark-600"
+        >
+          +
+        </button>
       </div>
     </div>
+  )}
+</div>
 
-    <div className="rounded-xl bg-white/5 p-4 text-center">
-      <div className="text-xl font-bold text-eco-amber">
-        {expectedPaybackYears.toFixed(1)} yrs
+                      {/* Selection Indicator */}
+                      <AnimatePresence>
+                        {isSelected && (
+                          <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            className="absolute top-2 right-2 w-5 h-5 bg-eco-green rounded-full flex items-center justify-center"
+                          >
+                            <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </GlassCard>
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Selection Summary */}
+          <div className="mt-6 text-center">
+            <span className="text-sm text-gray-500">
+              {selectedAppliances.length === 0
+                ? 'No appliances selected'
+                : `${selectedAppliances.length} appliance${selectedAppliances.length > 1 ? 's' : ''} selected`}
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Empty Recommendation Message */}
+{selectedAppliances.length === 0 && (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    className="mt-10 text-center"
+  >
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-gray-400">
+      <Zap className="w-4 h-4 text-eco-green" />
+      <span>Select at least one appliance to generate your solar recommendation.</span>
+    </div>
+  </motion.div>
+)}
+
+        {/* Results Display */}
+        {results && selectedAppliances.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            
+            <ResultsDisplay
+             results={results}
+             currency={currency}
+             monthlyBill={monthlyBill}
+             panelWattage={panelWattage}
+             setPanelWattage={setPanelWattage}
+             costPerKw={costPerKw}
+             setCostPerKw={setCostPerKw}
+             batteryCostPerKwh={batteryCostPerKwh}
+             setBatteryCostPerKwh={setBatteryCostPerKwh}
+            />
+         
+         {!isAdminChecking && !isAdminAuthenticated && (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay: 0.2 }}
+    className="mt-16"
+  >
+    <GlassCard glow="green" className="p-8 text-center">
+      <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-eco-green/20 bg-eco-green/10 px-4 py-2 text-xs font-medium text-eco-green">
+        <Zap className="h-4 w-4" />
+        Your Estimate Is Ready
       </div>
-      <div className="mt-1 text-xs text-gray-500">
-        Hybrid ROI
+
+      <h3 className="mt-5 text-2xl font-bold text-white sm:text-3xl">
+        Get Your Custom System Blueprint
+      </h3>
+
+      <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
+        Receive your personalized solar system summary, ROI details, and
+        recommendations based on your selected appliances and backup needs.
+      </p>
+
+      <button
+        type="button"
+        onClick={scrollToCustomBlueprint}
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-6 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105"
+      >
+        Get My Custom System Blueprint
+        <ArrowRight className="h-4 w-4" />
+      </button>
+    </GlassCard>
+  </motion.div>
+)}
+
+          </motion.div>
+        )}
       </div>
+
+      {showDemoLimitModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: 20 }}
+      transition={{ duration: 0.2 }}
+      className="relative w-full max-w-md rounded-3xl border border-white/10 bg-dark-800 p-6 shadow-2xl"
+    >
+      <button
+        onClick={() => setShowDemoLimitModal(false)}
+        className="absolute right-4 top-4 rounded-full bg-white/5 p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+        aria-label="Close demo limit popup"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-eco-green/10">
+        <Lock className="h-7 w-7 text-eco-green" />
+      </div>
+
+      <h3 className="mb-3 text-2xl font-bold text-white">
+        Demo Limit Reached
+      </h3>
+
+      <p className="mb-5 text-sm leading-relaxed text-gray-400">
+        The public EcoStep demo allows up to {DEMO_APPLIANCE_LIMIT} appliances.
+        Request full access to unlock unlimited appliances, white-label branding,
+        custom pricing, and company lead capture.
+      </p>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-gray-300">
+        <div className="font-semibold text-white">Full Access includes:</div>
+        <div className="mt-2 space-y-1 text-gray-400">
+          <div>• Unlimited appliance selections</div>
+          <div>• Full white-label company version</div>
+          <div>• Custom cost per kW settings</div>
+          <div>• Lead capture for your company</div>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <button
+          onClick={() => setShowDemoLimitModal(false)}
+          className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          Continue Demo
+        </button>
+
+        <a
+  href="#lead-form"
+  onClick={() => {
+    localStorage.setItem(
+      'ecostep_request_type',
+      'Full White-Label Version'
+    );
+
+    window.dispatchEvent(
+      new CustomEvent('ecostep-request-type', {
+        detail: 'Full White-Label Version',
+      })
+    );
+
+    setShowDemoLimitModal(false);
+  }}
+  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-eco-green px-4 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105"
+>
+  Request Full Access
+  <ArrowRight className="h-4 w-4" />
+</a>
+
+      </div>
+    </motion.div>
+  </div>
+)}
+
+    </section>
+  );
+}
+
+function ResultsDisplay({
+  results,
+  currency,
+  monthlyBill,
+  panelWattage,
+  setPanelWattage,
+  costPerKw,
+  setCostPerKw,
+  batteryCostPerKwh,
+  setBatteryCostPerKwh,
+}: {
+  results: CalculationResult;
+  currency: string;
+  monthlyBill: number;
+  panelWattage: number;
+  setPanelWattage: (value: number) => void;
+  costPerKw: number;
+  setCostPerKw: (value: number) => void;
+  batteryCostPerKwh: number;
+  setBatteryCostPerKwh: (value: number) => void;
+}) {
+ 
+  // Monthly savings is already converted to selected currency
+  const formattedSavings = formatCurrency(results.monthlySavings, currency);
+  const hasAppliances = results.dailyConsumptionKWh > 0;
+  const estimatedSolarSystemCost = hasAppliances
+  ? results.systemSizeKW * costPerKw
+  : 0;
+
+const estimatedBatteryCost = hasAppliances
+  ? results.batteryCapacityKWh * batteryCostPerKwh
+  : 0;
+
+const estimatedSystemCost = estimatedSolarSystemCost + estimatedBatteryCost;
+  
+  const estimatedNewBill = Math.max(0, monthlyBill - results.monthlySavings);
+  const annualSavings = results.monthlySavings * 12;
+  
+  const expectedPaybackYears =
+    annualSavings > 0 ? estimatedSystemCost / annualSavings : 0;
+  
+  const optimisticPaybackYears = expectedPaybackYears * 0.85;
+  const conservativePaybackYears = expectedPaybackYears * 1.3;
+  
+  const formattedCurrentBill = formatCurrency(monthlyBill, currency);
+  const formattedNewBill = formatCurrency(estimatedNewBill, currency);
+  const formattedAnnualSavings = formatCurrency(annualSavings, currency);
+  const formattedSystemCost = formatCurrency(estimatedSystemCost, currency);
+  const formattedSolarSystemCost = formatCurrency(estimatedSolarSystemCost, currency);
+  const formattedBatteryCost = formatCurrency(estimatedBatteryCost, currency);
+  const safePanelWattage = Math.max(1, panelWattage);
+  const panelsNeeded = hasAppliances
+  ? Math.ceil((results.systemSizeKW * 1000) / safePanelWattage)
+  : 0;
+  const totalPvCapacityKW = hasAppliances
+  ? ((panelsNeeded * safePanelWattage) / 1000).toFixed(1)
+  : '0.0';
+  const metrics = [
+    {
+      label: 'Solar System Size',
+      value: hasAppliances ? results.systemSizeKW : 0,
+      unit: 'kW',
+      color: 'green',
+    },
+    {
+      label: 'Battery Capacity',
+      value: hasAppliances ? results.batteryCapacityKWh : 0,
+      unit: 'kWh',
+      color: 'cyan',
+    },
+    {
+      label: 'Daily Consumption',
+      value: hasAppliances ? results.dailyConsumptionKWh.toFixed(1) : '0.0',
+      unit: 'kWh',
+      color: 'amber',
+    },
+    {
+      label: 'Backup Runtime',
+      value: hasAppliances ? results.backupRuntimeHours.toFixed(0) : 0,
+      unit: 'hrs',
+      color: 'green',
+    },
+    {
+      label: 'Optimal Month Savings',
+      value: formattedSavings,
+      unit: '',
+      color: 'cyan',
+    },
+    {
+       label: 'ROI Timeline',
+       value: expectedPaybackYears.toFixed(1),
+       unit: 'years',
+       color: 'amber',
+    },
+  ];
+
+  return (
+      <div className="space-y-6">
+        <div className="text-center">
+  <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+    <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 border border-white/10">
+      <Zap className="w-4 h-4 text-eco-green" />
+      <span className="text-xs text-gray-400">Personalized Hybrid Solar Estimate</span>
     </div>
 
-    <div className="rounded-xl bg-white/5 p-4 text-center">
-      <div className="text-xl font-bold text-eco-cyan">
-        {formattedSavings}
-      </div>
-      <div className="mt-1 text-xs text-gray-500">
-        Optimal Savings
-      </div>
-    </div>
-
-    <div className="col-span-2 rounded-xl bg-white/5 p-4 text-center sm:col-span-1">
-      <div className="text-xl font-bold text-eco-green">
-        {results.gridIndependencePercent}%
-      </div>
-      <div className="mt-1 text-xs text-gray-500">
-        Grid Independence
-      </div>
+    <div className="inline-flex items-center gap-2 rounded-full border border-eco-amber/30 bg-eco-amber/10 px-4 py-2">
+      <span className="h-2 w-2 rounded-full bg-eco-amber" />
+      <span className="text-xs font-medium text-eco-amber">
+        Optimal Sun Month Assumption
+      </span>
     </div>
   </div>
 
-  <div className="mt-4 rounded-xl border border-eco-amber/20 bg-eco-amber/10 p-3 text-center">
-    <p className="text-xs leading-relaxed text-gray-400">
-      Estimate based on optimal peak summer sun, minimal rain, and a properly
-      sized hybrid solar system with battery backup.
+  <h3 className="text-2xl sm:text-3xl font-bold text-white">
+    Your Solar Recommendation
+  </h3>
+
+  <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
+    A hybrid solar estimate based on your monthly bill, selected appliances, peak summer sun, minimal rain, and properly sized battery backup.
+  </p>
+</div>
+    
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+
+
+      {metrics.map((metric, index) => (
+        <motion.div
+          key={metric.label}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: index * 0.1 }}
+        >
+          <GlassCard
+            glow={metric.color as 'green' | 'cyan' | 'amber'}
+            className="p-4 text-center"
+          >
+            <div className={`text-3xl font-bold text-eco-${metric.color} mb-1`}>
+              {metric.value}
+              <span className="text-sm text-gray-400 ml-1">{metric.unit}</span>
+            </div>
+            <div className="text-xs text-gray-500">{metric.label}</div>
+          </GlassCard>
+        </motion.div>
+      ))}
+
+      <div className="col-span-2 md:col-span-3 lg:col-span-6">
+  <div className="rounded-2xl border border-eco-amber/20 bg-eco-amber/10 p-4 text-center">
+    <div className="text-sm font-semibold text-eco-amber">
+      Estimated Savings During Optimal Sun Months
+    </div>
+    <p className="mt-1 text-xs leading-relaxed text-gray-400">
+      These results assume peak summer conditions with strong sunlight, minimal rain,
+      and a properly installed hybrid solar system that can power daytime loads and recharge the battery for night use.
+      Rainy seasons, shading, utility fees, inverter limits, and appliance usage changes can reduce actual savings.
     </p>
   </div>
 </div>
 
-              {/* Form Fields */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <Input
-                  label="Full Name"
-                  placeholder="John Doe"
-                  icon={<User className="w-4 h-4" />}
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  error={errors.fullName}
+      {/* Grid Independence */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.6 }}
+        className="col-span-2 md:col-span-3"
+      >
+        <GlassCard glow="green" className="p-4 text-center">
+          <div className="flex items-center justify-between">
+            <div className="text-left">
+              <div className="text-2xl font-bold text-eco-green mb-1">
+                {results.gridIndependencePercent}%
+              </div>
+              <div className="text-xs text-gray-500">Grid Independence</div>
+            </div>
+            <div className="flex-1 ml-4">
+              <div className="h-3 bg-dark-700 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-eco-green to-eco-cyan rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${results.gridIndependencePercent}%` }}
+                  transition={{ duration: 1, delay: 0.5 }}
                 />
-
-                <Input
-                  label="Email Address"
-                  type="email"
-                  placeholder="john@example.com"
-                  icon={<Mail className="w-4 h-4" />}
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  error={errors.email}
-                />
               </div>
+            </div>
+          </div>
+        </GlassCard>
+      </motion.div>
 
-              <div className="flex gap-4">
-                <div className="w-32">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Country Code
-                  </label>
-                  <select
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-eco-amber/50"
-                    value={formData.countryCode}
-                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
-                  >
-                    {countryCodes.map((c) => (
-                      <option key={c.code} value={c.code} className="bg-dark-800">
-                        {c.flag} {c.code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex-1">
-                  <Input
-                    label="Phone Number"
-                    type="tel"
-                    placeholder="555-123-4567"
-                    icon={<Phone className="w-4 h-4" />}
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    error={errors.phone}
-                  />
-                </div>
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Notes / Special Requirements
-                </label>
-                <textarea
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-eco-amber/50 focus:ring-2 focus:ring-eco-amber/20 transition-all duration-300 min-h-[100px] resize-none"
-                  placeholder="Any specific requirements or questions?"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                />
-                <MessageSquare className="absolute right-4 top-10 w-4 h-4 text-gray-500" />
-              </div>
-
-              {errors.notes && (
-                <p className="text-sm text-red-400">{errors.notes}</p>
-              )}
-
-              <div className="pt-4">
-                <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-5 h-5" />
-                      Get My Custom Blueprint
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </GlassCard>
-        </motion.div>
-
-        {/* Success Modal */}
-        <AnimatePresence>
-          {showModal && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-              onClick={() => setShowModal(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="relative max-w-md w-full"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <GlassCard glow="green" className="p-8 text-center">
-                  <button
-                    className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
-                    onClick={() => setShowModal(false)}
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', delay: 0.2 }}
-                    className="w-20 h-20 mx-auto mb-6 rounded-full bg-eco-green/20 flex items-center justify-center"
-                  >
-                    <Check className="w-10 h-10 text-eco-green" />
-                  </motion.div>
-
-                  <h3 className="text-2xl font-bold text-white mb-2">
-                    Request Submitted!
-                  </h3>
-                  <p className="text-gray-400 mb-6">
-                    Our energy experts will contact you within 24 hours with your personalized solar system blueprint and ROI report.
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="p-3 bg-white/5 rounded-xl">
-                      <div className="text-sm text-gray-500">System Size</div>
-                      <div className="text-lg font-bold text-eco-green">
-                        {results.systemSizeKW}kW
-                      </div>
-                    </div>
-                    <div className="p-3 bg-white/5 rounded-xl">
-                      <div className="text-sm text-gray-500">Est. Savings</div>
-                      <div className="text-lg font-bold text-eco-cyan">
-                        {formattedSavings}/mo
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button variant="secondary" onClick={() => setShowModal(false)}>
-                    Close
-                  </Button>
-                </GlassCard>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+{/* Hybrid Load Breakdown */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4, delay: 0.65 }}
+  className="col-span-2 md:col-span-3 lg:col-span-6"
+>
+  <GlassCard glow="cyan" className="p-4">
+    <div className="mb-4">
+      <div className="text-lg font-bold text-white">
+        Hybrid Load Breakdown
       </div>
-    </section>
+      <div className="text-xs text-gray-500">
+        Shows how EcoStep splits your load between daytime solar use and night battery backup.
+      </div>
+    </div>
+
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="rounded-xl bg-white/5 p-4 text-center">
+        <div className="text-xl font-bold text-eco-green">
+          {results.dayLoadKWh.toFixed(1)} kWh
+        </div>
+        <div className="text-xs text-gray-500">Day Load</div>
+      </div>
+
+      <div className="rounded-xl bg-white/5 p-4 text-center">
+        <div className="text-xl font-bold text-eco-cyan">
+          {results.nightLoadKWh.toFixed(1)} kWh
+        </div>
+        <div className="text-xs text-gray-500">Night Load</div>
+      </div>
+
+      <div className="rounded-xl bg-white/5 p-4 text-center">
+        <div className="text-xl font-bold text-eco-amber">
+          {results.usableBatteryKWh.toFixed(1)} kWh
+        </div>
+        <div className="text-xs text-gray-500">Usable Battery</div>
+      </div>
+
+      <div className="rounded-xl bg-white/5 p-4 text-center">
+        <div className="text-xl font-bold text-white">
+          {results.generationNeededKWh.toFixed(1)} kWh
+        </div>
+        <div className="text-xs text-gray-500">Daily Generation Needed</div>
+      </div>
+    </div>
+
+    <p className="mt-4 text-xs text-gray-500">
+      Day load assumes a 6-hour usable daytime solar window. Night load assumes an 18-hour off-peak period.
+      Battery sizing uses 80% safe LiFePO4 depth of discharge.
+    </p>
+  </GlassCard>
+</motion.div>
+
+             {/* Solar Panel Recommendation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.7 }}
+        className="col-span-2 md:col-span-3 lg:col-span-6"
+      >
+        <GlassCard glow="cyan" className="p-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="text-lg font-bold text-white">
+                Recommended Solar Panel Setup
+              </div>
+              <div className="text-xs text-gray-500">
+                Estimated using editable panel wattage.
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">Panel Wattage:</span>
+              <input
+                type="number"
+                min="1"
+                value={panelWattage}
+                onChange={(e) =>
+                  setPanelWattage(Math.max(1, Number(e.target.value) || 1))
+                }
+                className="w-20 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-cyan"
+              />
+              <span className="text-xs text-gray-400">W</span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-2xl font-bold text-eco-green">
+                {panelsNeeded}
+              </div>
+              <div className="text-xs text-gray-500">Panels Needed</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-2xl font-bold text-eco-cyan">
+                {safePanelWattage}W
+              </div>
+              <div className="text-xs text-gray-500">Panel Size</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center col-span-2 md:col-span-1">
+              <div className="text-2xl font-bold text-eco-amber">
+                {totalPvCapacityKW} kW
+              </div>
+              <div className="text-xs text-gray-500">Total PV Capacity</div>
+            </div>
+          </div>
+
+          <p className="mt-4 text-xs text-gray-500">
+            Final panel count, roof layout, inverter MPPT voltage, and string design should be verified by a qualified solar installer.
+          </p>
+        </GlassCard>
+      </motion.div>
+
+            {/* ROI Savings Breakdown */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.8 }}
+        className="col-span-2 md:col-span-3 lg:col-span-6"
+      >
+        <GlassCard glow="green" className="p-4">
+          <div className="mb-4">
+          <div className="text-lg font-bold text-white">
+             Estimated Savings During Optimal Sun Months
+          </div>
+          <div className="text-xs text-gray-500">
+             Transparent hybrid estimate based on peak summer sun, minimal rain, selected appliances, and estimated system size.
+          </div>
+          </div>       
+
+          <div className="mb-4 rounded-xl bg-white/5 p-4">
+  <div className="mb-4">
+    <div className="text-sm font-semibold text-white">
+      Hybrid System Cost Assumptions
+    </div>
+    <div className="text-xs text-gray-500">
+      Adjust the solar/inverter cost per kW and battery cost per kWh to refine the ROI.
+    </div>
+  </div>
+
+  <div className="grid gap-3 md:grid-cols-2">
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-dark-800/60 p-3">
+      <span className="text-xs text-gray-400">Solar/Inverter Cost per kW:</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          value={costPerKw}
+          onChange={(e) =>
+            setCostPerKw(Math.max(1, Number(e.target.value) || 1))
+          }
+          className="w-24 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-green"
+        />
+        <span className="text-xs text-gray-400">/ kW</span>
+      </div>
+    </div>
+
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-dark-800/60 p-3">
+      <span className="text-xs text-gray-400">Battery Cost per kWh:</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          value={batteryCostPerKwh}
+          onChange={(e) =>
+            setBatteryCostPerKwh(Math.max(1, Number(e.target.value) || 1))
+          }
+          className="w-24 rounded bg-dark-700 px-2 py-1 text-center text-white outline-none focus:ring-1 focus:ring-eco-cyan"
+        />
+        <span className="text-xs text-gray-400">/ kWh</span>
+      </div>
+    </div>
+  </div>
+
+  <div className="mt-4 grid gap-3 md:grid-cols-3">
+    <div className="rounded-xl bg-white/5 p-3 text-center">
+      <div className="text-sm font-bold text-eco-green">
+        {formattedSolarSystemCost}
+      </div>
+      <div className="text-xs text-gray-500">Solar/Inverter Cost</div>
+    </div>
+
+    <div className="rounded-xl bg-white/5 p-3 text-center">
+      <div className="text-sm font-bold text-eco-cyan">
+        {formattedBatteryCost}
+      </div>
+      <div className="text-xs text-gray-500">Battery Bank Cost</div>
+    </div>
+
+    <div className="rounded-xl bg-white/5 p-3 text-center">
+      <div className="text-sm font-bold text-eco-amber">
+        {formattedSystemCost}
+      </div>
+      <div className="text-xs text-gray-500">Total Hybrid Cost</div>
+    </div>
+  </div>
+</div>
+
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-white">
+                {formattedCurrentBill}
+              </div>
+              <div className="text-xs text-gray-500">Current Bill</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-eco-green">
+                {formattedNewBill}
+              </div>
+              <div className="text-xs text-gray-500">Estimated New Bill</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-eco-cyan">
+                {formattedSavings}
+              </div>
+              <div className="text-xs text-gray-500">Monthly Savings</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-eco-amber">
+                {formattedAnnualSavings}
+              </div>
+              <div className="text-xs text-gray-500">Annual Savings</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-xl font-bold text-white">
+                {formattedSystemCost}
+              </div>
+              <div className="text-xs text-gray-500">Total Hybrid Cost</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+               <div className="text-xl font-bold text-eco-green">
+               {Math.round(results.gridIndependencePercent)}%
+               </div>
+               <div className="text-xs text-gray-500">Grid Independence</div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-lg font-bold text-eco-green">
+                {optimisticPaybackYears.toFixed(1)} yrs
+              </div>
+              <div className="text-xs text-gray-500">Optimistic Payback</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-lg font-bold text-eco-cyan">
+                {expectedPaybackYears.toFixed(1)} yrs
+              </div>
+              <div className="text-xs text-gray-500">Expected Payback</div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-4 text-center">
+              <div className="text-lg font-bold text-eco-amber">
+                {conservativePaybackYears.toFixed(1)} yrs
+              </div>
+              <div className="text-xs text-gray-500">Conservative Payback</div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl bg-white/5 p-4">
+            <div className="text-sm font-semibold text-white mb-2">
+              Assumptions
+            </div>
+            <p className="text-xs text-gray-500">
+             Assumes optimal peak summer sun conditions, minimal rain, and a properly sized hybrid solar system with battery backup.
+             The estimate uses {results.gridIndependencePercent}% grid independence during optimal months, {formatCurrency(costPerKw, currency)} per kW for solar/inverter cost, and {formatCurrency(batteryCostPerKwh, currency)} per kWh for battery cost.
+             Actual savings may change during rainy seasons, cloudy days, shading, changes in appliance usage, utility charges, battery sizing, inverter settings, and final installation design.
+             Professional site assessment is recommended.
+            </p>
+          </div>
+        </GlassCard>
+      </motion.div>
+
+    </div>
+   </div>
   );
 }
