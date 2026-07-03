@@ -4,7 +4,10 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { motion } from 'framer-motion';
+import {
+  AnimatePresence,
+  motion,
+} from 'framer-motion';
 import {
   BarChart3,
   Users,
@@ -19,6 +22,13 @@ import {
   PencilLine,
   Save,
   X,
+  Eye,
+  Mail,
+  Phone,
+  CalendarDays,
+  BatteryCharging,
+  Gauge,
+  FileText,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { supabase } from '../lib/supabase';
@@ -67,6 +77,36 @@ type LeadRecord = {
   status: string | null;
   created_at: string | null;
   currency: string | null;
+};
+
+type LeadAppliance = {
+  id?: string;
+  name?: string;
+  watts?: number;
+  quantity?: number;
+  hoursPerDay?: number;
+};
+
+const parseSelectedAppliances = (
+  value: unknown
+): LeadAppliance[] => {
+  if (Array.isArray(value)) {
+    return value as LeadAppliance[];
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsedValue = JSON.parse(value);
+
+      return Array.isArray(parsedValue)
+        ? (parsedValue as LeadAppliance[])
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
 };
 
 const toNumber = (value: NumericValue) => {
@@ -177,6 +217,9 @@ export function AdminDashboardPreview({
   const [leadUpdateSuccess, setLeadUpdateSuccess] =
   useState('');
 
+  const [selectedLead, setSelectedLead] =
+  useState<LeadRecord | null>(null);
+
   const loadLeads = useCallback(async () => {
     if (!isAdminAuthenticated) {
       setLeads([]);
@@ -258,6 +301,16 @@ export function AdminDashboardPreview({
     setLeadUpdateError('');
     setLeadUpdateSuccess('');
   };
+
+  const openLeadDetails = (lead: LeadRecord) => {
+    setSelectedLead(lead);
+    openLeadEditor(lead);
+  };
+  
+  const closeLeadDetails = () => {
+    setSelectedLead(null);
+    closeLeadEditor();
+  };
   
   const saveLeadChanges = async () => {
     if (!editingLeadId || !isAdminAuthenticated) {
@@ -299,6 +352,18 @@ export function AdminDashboardPreview({
             : lead
         )
       );
+
+      setSelectedLead((currentLead) => {
+        if (!currentLead || currentLead.id !== data.id) {
+          return currentLead;
+        }
+      
+        return {
+          ...currentLead,
+          status: data.status,
+          admin_notes: data.admin_notes,
+        };
+      });
   
       setLeadUpdateSuccess(
         'Lead status and admin notes saved successfully.'
@@ -400,6 +465,16 @@ export function AdminDashboardPreview({
       },
     ];
   }, [leads]);
+
+  const selectedLeadAppliances = useMemo(
+  () =>
+    selectedLead
+      ? parseSelectedAppliances(
+          selectedLead.selected_appliances
+        )
+      : [],
+  [selectedLead]
+);
 
   if (isAdminChecking) {
     return (
@@ -720,6 +795,15 @@ export function AdminDashboardPreview({
                               >
                                 {formatStatus(lead.status)}
                               </span>
+
+                              <button
+                                type="button"
+                                onClick={() => openLeadDetails(lead)}
+                                className="flex items-center gap-2 rounded-xl border border-eco-cyan/20 bg-eco-cyan/10 px-3 py-2 text-xs font-semibold text-eco-cyan transition-colors hover:bg-eco-cyan hover:text-dark-900"
+                               >
+                               <Eye className="h-4 w-4" />
+                                View Details
+                              </button>
                       
                               <button
                                 type="button"
@@ -866,6 +950,447 @@ export function AdminDashboardPreview({
           protected lead submissions from Supabase.
         </div>
       </div>
-    </section>
+
+<AnimatePresence>
+  {selectedLead && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={() => {
+        if (!isLeadSaving) {
+          closeLeadDetails();
+        }
+      }}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 20 }}
+        transition={{ duration: 0.2 }}
+        onClick={(event) => event.stopPropagation()}
+        className="relative max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-3xl border border-white/10 bg-dark-800 p-6 shadow-2xl sm:p-8"
+      >
+        <button
+          type="button"
+          onClick={closeLeadDetails}
+          disabled={isLeadSaving}
+          aria-label="Close lead details"
+          className="absolute right-5 top-5 rounded-full border border-white/10 bg-white/5 p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="pr-12">
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
+                selectedLead.status
+              )}`}
+            >
+              {formatStatus(selectedLead.status)}
+            </span>
+
+            <span className="inline-flex items-center gap-2 text-xs text-gray-500">
+              <CalendarDays className="h-4 w-4" />
+              Submitted{' '}
+              {formatLeadDate(selectedLead.created_at)}
+            </span>
+          </div>
+
+          <h3 className="mt-4 text-3xl font-bold text-white">
+            {selectedLead.full_name}
+          </h3>
+
+          <p className="mt-2 text-sm text-gray-400">
+            Complete protected EcoStep lead record,
+            system recommendation, and follow-up management.
+          </p>
+        </div>
+
+        {/* Customer Contact Information */}
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <Mail className="mt-0.5 h-5 w-5 text-eco-green" />
+
+            <div className="min-w-0">
+              <div className="text-xs text-gray-500">
+                Email Address
+              </div>
+
+              <div className="mt-1 break-all text-sm font-medium text-white">
+                {selectedLead.email}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <Phone className="mt-0.5 h-5 w-5 text-eco-cyan" />
+
+            <div>
+              <div className="text-xs text-gray-500">
+                Phone Number
+              </div>
+
+              <div className="mt-1 text-sm font-medium text-white">
+                {[
+                  selectedLead.country_code,
+                  selectedLead.phone,
+                ]
+                  .filter(Boolean)
+                  .join(' ') || 'No phone number'}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <CalendarDays className="mt-0.5 h-5 w-5 text-eco-amber" />
+
+            <div>
+              <div className="text-xs text-gray-500">
+                Submission Date
+              </div>
+
+              <div className="mt-1 text-sm font-medium text-white">
+                {formatLeadDate(selectedLead.created_at)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Full System Calculations */}
+        <div className="mt-6">
+          <div className="flex items-center gap-2">
+            <Gauge className="h-5 w-5 text-eco-green" />
+
+            <h4 className="text-xl font-bold text-white">
+              System Recommendation
+            </h4>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="text-xs text-gray-500">
+                Monthly Electric Bill
+              </div>
+
+              <div className="mt-2 text-xl font-bold text-white">
+                {formatMoney(
+                  selectedLead.monthly_bill,
+                  selectedLead.currency
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-eco-green/20 bg-eco-green/10 p-4">
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <Zap className="h-4 w-4 text-eco-green" />
+                Solar System
+              </div>
+
+              <div className="mt-2 text-xl font-bold text-eco-green">
+                {toNumber(
+                  selectedLead.estimated_kw
+                ).toFixed(1)}{' '}
+                kW
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-eco-cyan/20 bg-eco-cyan/10 p-4">
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <BatteryCharging className="h-4 w-4 text-eco-cyan" />
+                Battery Capacity
+              </div>
+
+              <div className="mt-2 text-xl font-bold text-eco-cyan">
+                {toNumber(
+                  selectedLead.estimated_battery
+                ).toFixed(1)}{' '}
+                kWh
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-eco-amber/20 bg-eco-amber/10 p-4">
+              <div className="text-xs text-gray-400">
+                Daily Consumption
+              </div>
+
+              <div className="mt-2 text-xl font-bold text-eco-amber">
+                {toNumber(
+                  selectedLead.daily_consumption
+                ).toFixed(1)}{' '}
+                kWh
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="text-xs text-gray-500">
+                Backup Runtime
+              </div>
+
+              <div className="mt-2 text-xl font-bold text-white">
+                {toNumber(
+                  selectedLead.backup_runtime
+                ).toFixed(1)}{' '}
+                hours
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="text-xs text-gray-500">
+                Monthly Savings
+              </div>
+
+              <div className="mt-2 text-xl font-bold text-eco-green">
+                {formatMoney(
+                  selectedLead.monthly_savings,
+                  selectedLead.currency
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="text-xs text-gray-500">
+                Expected ROI
+              </div>
+
+              <div className="mt-2 text-xl font-bold text-eco-cyan">
+                {toNumber(
+                  selectedLead.roi_years
+                ).toFixed(2)}{' '}
+                years
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="text-xs text-gray-500">
+                Grid Independence
+              </div>
+
+              <div className="mt-2 text-xl font-bold text-eco-amber">
+                {Math.round(
+                  toNumber(
+                    selectedLead.grid_independence
+                  )
+                )}
+                %
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Selected Appliances */}
+        <div className="mt-6">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-eco-cyan" />
+
+            <h4 className="text-xl font-bold text-white">
+              Selected Appliances
+            </h4>
+          </div>
+
+          {selectedLeadAppliances.length > 0 ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {selectedLeadAppliances.map(
+                (appliance, index) => {
+                  const watts = Number(
+                    appliance.watts ?? 0
+                  );
+
+                  const quantity = Number(
+                    appliance.quantity ?? 1
+                  );
+
+                  const hoursPerDay = Number(
+                    appliance.hoursPerDay ?? 0
+                  );
+
+                  const dailyEnergyKWh =
+                    (watts *
+                      quantity *
+                      hoursPerDay) /
+                    1000;
+
+                  return (
+                    <div
+                      key={
+                        appliance.id ??
+                        `${appliance.name}-${index}`
+                      }
+                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                    >
+                      <div className="font-semibold text-white">
+                        {appliance.name ||
+                          'Custom Appliance'}
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
+                        <div>
+                          Power:{' '}
+                          <span className="text-white">
+                            {watts} W
+                          </span>
+                        </div>
+
+                        <div>
+                          Quantity:{' '}
+                          <span className="text-white">
+                            {quantity}
+                          </span>
+                        </div>
+
+                        <div>
+                          Usage:{' '}
+                          <span className="text-white">
+                            {hoursPerDay} hrs/day
+                          </span>
+                        </div>
+
+                        <div>
+                          Daily:{' '}
+                          <span className="text-eco-green">
+                            {dailyEnergyKWh.toFixed(2)}{' '}
+                            kWh
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-gray-400">
+              No appliance details were stored for this
+              lead.
+            </div>
+          )}
+        </div>
+
+        {/* Customer and Admin Notes */}
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-eco-amber" />
+
+              <h4 className="font-bold text-white">
+                Customer Notes
+              </h4>
+            </div>
+
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-gray-300">
+              {selectedLead.notes ||
+                'No customer notes were submitted.'}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-eco-green/20 bg-eco-green/5 p-5">
+            <div className="flex items-center gap-2">
+              <PencilLine className="h-5 w-5 text-eco-green" />
+
+              <h4 className="font-bold text-white">
+                Lead Management
+              </h4>
+            </div>
+
+            <label className="mt-4 block">
+              <span className="mb-2 block text-sm font-medium text-gray-300">
+                Lead Status
+              </span>
+
+              <select
+                value={draftStatus}
+                onChange={(event) => {
+                  setDraftStatus(
+                    event.target.value as LeadStatus
+                  );
+
+                  setLeadUpdateError('');
+                  setLeadUpdateSuccess('');
+                }}
+                disabled={isLeadSaving}
+                className="w-full rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none focus:border-eco-green disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {LEAD_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {formatStatus(status)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="mt-4 block">
+              <span className="mb-2 block text-sm font-medium text-gray-300">
+                Private Admin Notes
+              </span>
+
+              <textarea
+                value={draftAdminNotes}
+                onChange={(event) => {
+                  setDraftAdminNotes(
+                    event.target.value
+                  );
+
+                  setLeadUpdateError('');
+                  setLeadUpdateSuccess('');
+                }}
+                disabled={isLeadSaving}
+                rows={5}
+                placeholder="Add follow-up details, customer requirements, or next actions..."
+                className="w-full resize-none rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-eco-green disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </label>
+
+            {leadUpdateError && (
+              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+                {leadUpdateError}
+              </div>
+            )}
+
+            {leadUpdateSuccess && (
+              <div className="mt-4 rounded-xl border border-eco-green/30 bg-eco-green/10 p-3 text-sm text-eco-green">
+                {leadUpdateSuccess}
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeLeadDetails}
+                disabled={isLeadSaving}
+                className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <X className="h-4 w-4" />
+                Close
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  void saveLeadChanges()
+                }
+                disabled={isLeadSaving}
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-5 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLeadSaving ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+
+                {isLeadSaving
+                  ? 'Saving Changes...'
+                  : 'Save Lead Changes'}
+              </button>
+            </div>
+          </div>
+         </div>
+       </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+</section>
+  
   );
 }
