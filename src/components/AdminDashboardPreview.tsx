@@ -16,6 +16,9 @@ import {
   RefreshCw,
   AlertTriangle,
   Zap,
+  PencilLine,
+  Save,
+  X,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { supabase } from '../lib/supabase';
@@ -28,6 +31,21 @@ type AdminDashboardPreviewProps = {
 };
 
 type NumericValue = number | string | null;
+
+type LeadStatus =
+  | 'new'
+  | 'contacted'
+  | 'qualified'
+  | 'closed'
+  | 'archived';
+
+const LEAD_STATUSES: LeadStatus[] = [
+  'new',
+  'contacted',
+  'qualified',
+  'closed',
+  'archived',
+];
 
 type LeadRecord = {
   id: string;
@@ -45,6 +63,7 @@ type LeadRecord = {
   roi_years: NumericValue;
   grid_independence: NumericValue;
   notes: string | null;
+  admin_notes: string | null;
   status: string | null;
   created_at: string | null;
   currency: string | null;
@@ -140,6 +159,24 @@ export function AdminDashboardPreview({
     useState(false);
   const [leadsError, setLeadsError] = useState('');
 
+  const [editingLeadId, setEditingLeadId] =
+  useState<string | null>(null);
+
+  const [draftStatus, setDraftStatus] =
+  useState<LeadStatus>('new');
+
+  const [draftAdminNotes, setDraftAdminNotes] =
+  useState('');
+
+  const [isLeadSaving, setIsLeadSaving] =
+  useState(false);
+
+  const [leadUpdateError, setLeadUpdateError] =
+  useState('');
+
+  const [leadUpdateSuccess, setLeadUpdateSuccess] =
+  useState('');
+
   const loadLeads = useCallback(async () => {
     if (!isAdminAuthenticated) {
       setLeads([]);
@@ -169,6 +206,7 @@ export function AdminDashboardPreview({
           roi_years,
           grid_independence,
           notes,
+          admin_notes,
           status,
           created_at,
           currency
@@ -195,6 +233,89 @@ export function AdminDashboardPreview({
       setIsLeadsLoading(false);
     }
   }, [isAdminAuthenticated]);
+
+  const openLeadEditor = (lead: LeadRecord) => {
+    const normalizedStatus =
+      (lead.status || 'new').toLowerCase() as LeadStatus;
+  
+    setEditingLeadId(lead.id);
+  
+    setDraftStatus(
+      LEAD_STATUSES.includes(normalizedStatus)
+        ? normalizedStatus
+        : 'new'
+    );
+  
+    setDraftAdminNotes(lead.admin_notes ?? '');
+    setLeadUpdateError('');
+    setLeadUpdateSuccess('');
+  };
+  
+  const closeLeadEditor = () => {
+    setEditingLeadId(null);
+    setDraftStatus('new');
+    setDraftAdminNotes('');
+    setLeadUpdateError('');
+    setLeadUpdateSuccess('');
+  };
+  
+  const saveLeadChanges = async () => {
+    if (!editingLeadId || !isAdminAuthenticated) {
+      return;
+    }
+  
+    setIsLeadSaving(true);
+    setLeadUpdateError('');
+    setLeadUpdateSuccess('');
+  
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .update({
+          status: draftStatus,
+          admin_notes:
+            draftAdminNotes.trim() || null,
+        })
+        .eq('id', editingLeadId)
+        .select(`
+          id,
+          status,
+          admin_notes
+        `)
+        .single();
+  
+      if (error) {
+        throw error;
+      }
+  
+      setLeads((currentLeads) =>
+        currentLeads.map((lead) =>
+          lead.id === data.id
+            ? {
+                ...lead,
+                status: data.status,
+                admin_notes: data.admin_notes,
+              }
+            : lead
+        )
+      );
+  
+      setLeadUpdateSuccess(
+        'Lead status and admin notes saved successfully.'
+      );
+    } catch (error) {
+      console.error(
+        '[Admin Dashboard] Unable to update lead:',
+        error
+      );
+  
+      setLeadUpdateError(
+        'EcoStep could not save the lead changes. Please try again.'
+      );
+    } finally {
+      setIsLeadSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (isAdminChecking) {
@@ -543,74 +664,197 @@ export function AdminDashboardPreview({
                       .filter(Boolean)
                       .join(' ');
 
-                    return (
-                      <div
-                        key={lead.id}
-                        className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 lg:flex-row lg:items-center lg:justify-between"
-                      >
-                        <div className="min-w-0">
-                          <div className="font-semibold text-white">
-                            {lead.full_name}
+                      return (
+                        <div
+                          key={lead.id}
+                          className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                        >
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-white">
+                                {lead.full_name}
+                              </div>
+                      
+                              <div className="mt-1 text-sm text-gray-400">
+                                {lead.email}
+                              </div>
+                      
+                              <div className="mt-1 text-xs text-gray-500">
+                                {phoneNumber || 'No phone number'} •{' '}
+                                {formatLeadDate(lead.created_at)}
+                              </div>
+                            </div>
+                      
+                            <div className="grid gap-1 text-xs text-gray-400 sm:grid-cols-2 lg:text-right">
+                              <div>
+                                {toNumber(lead.estimated_kw).toFixed(1)}{' '}
+                                kW solar
+                              </div>
+                      
+                              <div>
+                                {toNumber(
+                                  lead.estimated_battery
+                                ).toFixed(1)}{' '}
+                                kWh battery
+                              </div>
+                      
+                              <div>
+                                {formatMoney(
+                                  lead.monthly_bill,
+                                  lead.currency
+                                )}{' '}
+                                monthly bill
+                              </div>
+                      
+                              <div>
+                                {toNumber(lead.roi_years).toFixed(1)}{' '}
+                                yrs ROI
+                              </div>
+                            </div>
+                      
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
+                                  lead.status
+                                )}`}
+                              >
+                                {formatStatus(lead.status)}
+                              </span>
+                      
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (editingLeadId === lead.id) {
+                                    closeLeadEditor();
+                                  } else {
+                                    openLeadEditor(lead);
+                                  }
+                                }}
+                                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                              >
+                                {editingLeadId === lead.id ? (
+                                  <X className="h-4 w-4" />
+                                ) : (
+                                  <PencilLine className="h-4 w-4" />
+                                )}
+                      
+                                {editingLeadId === lead.id
+                                  ? 'Close'
+                                  : 'Manage'}
+                              </button>
+                            </div>
                           </div>
-
-                          <div className="mt-1 text-sm text-gray-400">
-                            {lead.email}
-                          </div>
-
-                          <div className="mt-1 text-xs text-gray-500">
-                            {phoneNumber ||
-                              'No phone number'}{' '}
-                            •{' '}
-                            {formatLeadDate(
-                              lead.created_at
-                            )}
-                          </div>
+                      
+                          {editingLeadId === lead.id && (
+                            <div className="mt-4 border-t border-white/10 pt-4">
+                              {lead.notes && (
+                                <div className="mb-4 rounded-xl border border-white/10 bg-dark-800/60 p-4">
+                                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                    Customer Notes
+                                  </div>
+                      
+                                  <p className="mt-2 text-sm leading-relaxed text-gray-300">
+                                    {lead.notes}
+                                  </p>
+                                </div>
+                              )}
+                      
+                              <div className="grid gap-4 lg:grid-cols-2">
+                                <label className="block">
+                                  <span className="mb-2 block text-sm font-medium text-gray-300">
+                                    Lead Status
+                                  </span>
+                      
+                                  <select
+                                    value={draftStatus}
+                                    onChange={(event) => {
+                                      setDraftStatus(
+                                        event.target.value as LeadStatus
+                                      );
+                      
+                                      setLeadUpdateError('');
+                                      setLeadUpdateSuccess('');
+                                    }}
+                                    disabled={isLeadSaving}
+                                    className="w-full rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none focus:border-eco-green disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {LEAD_STATUSES.map((status) => (
+                                      <option key={status} value={status}>
+                                        {formatStatus(status)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                      
+                                <label className="block">
+                                  <span className="mb-2 block text-sm font-medium text-gray-300">
+                                    Private Admin Notes
+                                  </span>
+                      
+                                  <textarea
+                                    value={draftAdminNotes}
+                                    onChange={(event) => {
+                                      setDraftAdminNotes(
+                                        event.target.value
+                                      );
+                      
+                                      setLeadUpdateError('');
+                                      setLeadUpdateSuccess('');
+                                    }}
+                                    disabled={isLeadSaving}
+                                    rows={4}
+                                    placeholder="Add follow-up details, customer requirements, or next actions..."
+                                    className="w-full resize-none rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-eco-green disabled:cursor-not-allowed disabled:opacity-60"
+                                  />
+                                </label>
+                              </div>
+                      
+                              {leadUpdateError && (
+                                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+                                  {leadUpdateError}
+                                </div>
+                              )}
+                      
+                              {leadUpdateSuccess && (
+                                <div className="mt-4 rounded-xl border border-eco-green/30 bg-eco-green/10 p-3 text-sm text-eco-green">
+                                  {leadUpdateSuccess}
+                                </div>
+                              )}
+                      
+                              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                                <button
+                                  type="button"
+                                  onClick={closeLeadEditor}
+                                  disabled={isLeadSaving}
+                                  className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <X className="h-4 w-4" />
+                                  Cancel
+                                </button>
+                      
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void saveLeadChanges()
+                                  }
+                                  disabled={isLeadSaving}
+                                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-5 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {isLeadSaving ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Save className="h-4 w-4" />
+                                  )}
+                      
+                                  {isLeadSaving
+                                    ? 'Saving Changes...'
+                                    : 'Save Lead Changes'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-
-                        <div className="grid gap-1 text-xs text-gray-400 sm:grid-cols-2 lg:text-right">
-                          <div>
-                            {toNumber(
-                              lead.estimated_kw
-                            ).toFixed(1)}{' '}
-                            kW solar
-                          </div>
-
-                          <div>
-                            {toNumber(
-                              lead.estimated_battery
-                            ).toFixed(1)}{' '}
-                            kWh battery
-                          </div>
-
-                          <div>
-                            {formatMoney(
-                              lead.monthly_bill,
-                              lead.currency
-                            )}{' '}
-                            monthly bill
-                          </div>
-
-                          <div>
-                            {toNumber(
-                              lead.roi_years
-                            ).toFixed(1)}{' '}
-                            yrs ROI
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
-                              lead.status
-                            )}`}
-                          >
-                            {formatStatus(lead.status)}
-                          </span>
-
-                          <ArrowRight className="h-4 w-4 text-gray-500" />
-                        </div>
-                      </div>
-                    );
+                      );
                   })}
                 </div>
               )}
