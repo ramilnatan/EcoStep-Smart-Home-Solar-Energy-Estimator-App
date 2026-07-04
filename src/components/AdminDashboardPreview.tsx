@@ -29,6 +29,9 @@ import {
   BatteryCharging,
   Gauge,
   FileText,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { supabase } from '../lib/supabase';
@@ -57,6 +60,18 @@ const LEAD_STATUSES: LeadStatus[] = [
   'archived',
 ];
 
+type LeadStatusFilter = 'all' | LeadStatus;
+
+type LeadSortOrder = 'newest' | 'oldest';
+
+type AdminDashboardView = 'leads' | 'customers';
+
+const LEADS_PER_PAGE = 5;
+
+type CustomerSortOrder = 'newest' | 'oldest';
+
+const CUSTOMERS_PER_PAGE = 5;
+
 type LeadRecord = {
   id: string;
   full_name: string;
@@ -77,6 +92,16 @@ type LeadRecord = {
   status: string | null;
   created_at: string | null;
   currency: string | null;
+};
+
+type CustomerRecord = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone_number: string | null;
+  location: string | null;
+  created_at: string;
+  request_type: string | null;
 };
 
 type LeadAppliance = {
@@ -134,6 +159,12 @@ const formatLeadDate = (createdAt: string | null) => {
     day: 'numeric',
     year: 'numeric',
   }).format(parsedDate);
+};
+
+const formatCustomerRequestType = (
+  requestType: string | null
+) => {
+  return requestType?.trim() || 'General Inquiry';
 };
 
 const formatMoney = (
@@ -220,6 +251,44 @@ export function AdminDashboardPreview({
   const [selectedLead, setSelectedLead] =
   useState<LeadRecord | null>(null);
 
+  const [leadSearch, setLeadSearch] = useState('');
+
+  const [leadStatusFilter, setLeadStatusFilter] =
+  useState<LeadStatusFilter>('all');
+
+  const [leadSortOrder, setLeadSortOrder] =
+  useState<LeadSortOrder>('newest');
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [activeAdminView, setActiveAdminView] =
+  useState<AdminDashboardView>('leads');
+
+const [customers, setCustomers] =
+  useState<CustomerRecord[]>([]);
+
+const [isCustomersLoading, setIsCustomersLoading] =
+  useState(false);
+
+const [customersError, setCustomersError] =
+  useState('');
+
+  const [customerSearch, setCustomerSearch] =
+  useState('');
+
+const [
+  customerRequestFilter,
+  setCustomerRequestFilter,
+] = useState('all');
+
+const [customerSortOrder, setCustomerSortOrder] =
+  useState<CustomerSortOrder>('newest');
+
+const [
+  customerCurrentPage,
+  setCustomerCurrentPage,
+] = useState(1);
+
   const loadLeads = useCallback(async () => {
     if (!isAdminAuthenticated) {
       setLeads([]);
@@ -276,6 +345,51 @@ export function AdminDashboardPreview({
       setIsLeadsLoading(false);
     }
   }, [isAdminAuthenticated]);
+
+  const loadCustomers = useCallback(async () => {
+  if (!isAdminAuthenticated) {
+    setCustomers([]);
+    setCustomersError('');
+    return;
+  }
+
+  setIsCustomersLoading(true);
+  setCustomersError('');
+
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .select(`
+        id,
+        full_name,
+        email,
+        phone_number,
+        location,
+        created_at,
+        request_type
+      `)
+      .order('created_at', {
+        ascending: false,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    setCustomers((data ?? []) as CustomerRecord[]);
+  } catch (error) {
+    console.error(
+      '[Admin Dashboard] Unable to load customers:',
+      error
+    );
+
+    setCustomersError(
+      'EcoStep could not load the protected customer inquiries. Please try again.'
+    );
+  } finally {
+    setIsCustomersLoading(false);
+  }
+}, [isAdminAuthenticated]);
 
   const openLeadEditor = (lead: LeadRecord) => {
     const normalizedStatus =
@@ -382,23 +496,27 @@ export function AdminDashboardPreview({
     }
   };
 
-  useEffect(() => {
-    if (isAdminChecking) {
-      return;
-    }
+useEffect(() => {
+  if (isAdminChecking) {
+    return;
+  }
 
-    if (!isAdminAuthenticated) {
-      setLeads([]);
-      setLeadsError('');
-      return;
-    }
+  if (!isAdminAuthenticated) {
+    setLeads([]);
+    setLeadsError('');
+    setCustomers([]);
+    setCustomersError('');
+    return;
+  }
 
-    void loadLeads();
-  }, [
-    isAdminAuthenticated,
-    isAdminChecking,
-    loadLeads,
-  ]);
+  void loadLeads();
+  void loadCustomers();
+}, [
+  isAdminAuthenticated,
+  isAdminChecking,
+  loadLeads,
+  loadCustomers,
+]);
 
   const stats = useMemo(() => {
     const newLeadCount = leads.filter(
@@ -475,6 +593,182 @@ export function AdminDashboardPreview({
       : [],
   [selectedLead]
 );
+
+const searchedLeads = useMemo(() => {
+  const normalizedSearch = leadSearch
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedSearch) {
+    return leads;
+  }
+
+  return leads.filter((lead) => {
+    const searchablePhone = [
+      lead.country_code,
+      lead.phone,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return (
+      lead.full_name
+        .toLowerCase()
+        .includes(normalizedSearch) ||
+      lead.email
+        .toLowerCase()
+        .includes(normalizedSearch) ||
+      searchablePhone.includes(normalizedSearch)
+    );
+  });
+}, [leads, leadSearch]);
+
+const filteredSortedLeads = useMemo(() => {
+  const filteredLeads = searchedLeads.filter(
+    (lead) =>
+      leadStatusFilter === 'all' ||
+      (lead.status || 'new').toLowerCase() ===
+        leadStatusFilter
+  );
+
+  return [...filteredLeads].sort((firstLead, secondLead) => {
+    const firstDate = firstLead.created_at
+      ? new Date(firstLead.created_at).getTime()
+      : 0;
+
+    const secondDate = secondLead.created_at
+      ? new Date(secondLead.created_at).getTime()
+      : 0;
+
+    return leadSortOrder === 'newest'
+      ? secondDate - firstDate
+      : firstDate - secondDate;
+  });
+}, [
+  searchedLeads,
+  leadStatusFilter,
+  leadSortOrder,
+]);
+
+const totalPages = Math.max(
+  1,
+  Math.ceil(
+    filteredSortedLeads.length / LEADS_PER_PAGE
+  )
+);
+
+const pageStart =
+  (currentPage - 1) * LEADS_PER_PAGE;
+
+const paginatedLeads = filteredSortedLeads.slice(
+  pageStart,
+  pageStart + LEADS_PER_PAGE
+);
+
+useEffect(() => {
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
+}, [currentPage, totalPages]);
+
+const customerRequestTypes = useMemo(() => {
+  return Array.from(
+    new Set(
+      customers.map((customer) =>
+        formatCustomerRequestType(
+          customer.request_type
+        )
+      )
+    )
+  ).sort((firstType, secondType) =>
+    firstType.localeCompare(secondType)
+  );
+}, [customers]);
+
+const filteredSortedCustomers = useMemo(() => {
+  const normalizedSearch = customerSearch
+    .trim()
+    .toLowerCase();
+
+  const filteredCustomers = customers.filter(
+    (customer) => {
+      const searchableValues = [
+        customer.full_name,
+        customer.email ?? '',
+        customer.phone_number ?? '',
+        customer.location ?? '',
+        formatCustomerRequestType(
+          customer.request_type
+        ),
+      ];
+
+      const matchesSearch =
+        !normalizedSearch ||
+        searchableValues.some((value) =>
+          value
+            .toLowerCase()
+            .includes(normalizedSearch)
+        );
+
+      const matchesRequestType =
+        customerRequestFilter === 'all' ||
+        formatCustomerRequestType(
+          customer.request_type
+        ) === customerRequestFilter;
+
+      return matchesSearch && matchesRequestType;
+    }
+  );
+
+  return [...filteredCustomers].sort(
+    (firstCustomer, secondCustomer) => {
+      const firstDate = new Date(
+        firstCustomer.created_at
+      ).getTime();
+
+      const secondDate = new Date(
+        secondCustomer.created_at
+      ).getTime();
+
+      return customerSortOrder === 'newest'
+        ? secondDate - firstDate
+        : firstDate - secondDate;
+    }
+  );
+}, [
+  customers,
+  customerSearch,
+  customerRequestFilter,
+  customerSortOrder,
+]);
+
+const customerTotalPages = Math.max(
+  1,
+  Math.ceil(
+    filteredSortedCustomers.length /
+      CUSTOMERS_PER_PAGE
+  )
+);
+
+const customerPageStart =
+  (customerCurrentPage - 1) *
+  CUSTOMERS_PER_PAGE;
+
+const paginatedCustomers =
+  filteredSortedCustomers.slice(
+    customerPageStart,
+    customerPageStart + CUSTOMERS_PER_PAGE
+  );
+
+useEffect(() => {
+  if (customerCurrentPage > customerTotalPages) {
+    setCustomerCurrentPage(customerTotalPages);
+  }
+}, [
+  customerCurrentPage,
+  customerTotalPages,
+]);
 
   if (isAdminChecking) {
     return (
@@ -588,13 +882,18 @@ export function AdminDashboardPreview({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => void loadLeads()}
-              disabled={isLeadsLoading}
+              onClick={() => {
+                 void loadLeads();
+                 void loadCustomers();
+                 }}
+              disabled={isLeadsLoading || isCustomersLoading}
               className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw
                 className={`h-4 w-4 ${
-                  isLeadsLoading ? 'animate-spin' : ''
+                  isLeadsLoading || isCustomersLoading
+                  ? 'animate-spin'
+                 : ''
                 }`}
               />
               Refresh
@@ -610,9 +909,45 @@ export function AdminDashboardPreview({
             </button>
           </div>
         </div>
+           
+              <div className="mt-8 flex justify-center">
+  <div className="inline-flex rounded-2xl border border-white/10 bg-white/5 p-1">
+    <button
+      type="button"
+      onClick={() => {
+        setActiveAdminView('leads');
+        closeLeadDetails();
+      }}
+      className={`rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
+        activeAdminView === 'leads'
+          ? 'bg-gradient-to-r from-eco-green to-eco-cyan text-dark-900'
+          : 'text-gray-400 hover:bg-white/5 hover:text-white'
+      }`}
+    >
+      Solar Leads ({leads.length})
+    </button>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((item, index) => (
+    <button
+      type="button"
+      onClick={() => {
+        setActiveAdminView('customers');
+        closeLeadDetails();
+      }}
+      className={`rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
+        activeAdminView === 'customers'
+          ? 'bg-gradient-to-r from-eco-green to-eco-cyan text-dark-900'
+          : 'text-gray-400 hover:bg-white/5 hover:text-white'
+      }`}
+    >
+      Customer Inquiries ({customers.length})
+    </button>
+  </div>
+</div>
+
+{activeAdminView === 'leads' && (
+  <>
+    <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {stats.map((item, index) => (
             <motion.div
               key={item.label}
               initial={{ opacity: 0, y: 24 }}
@@ -650,7 +985,7 @@ export function AdminDashboardPreview({
               </GlassCard>
             </motion.div>
           ))}
-        </div>
+       </div>
 
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -676,6 +1011,80 @@ export function AdminDashboardPreview({
                 Live Supabase Data
               </div>
             </div>
+
+<div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_180px]">
+  <label className="relative block">
+    <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+
+    <input
+      type="search"
+      value={leadSearch}
+      onChange={(event) => {
+        setLeadSearch(event.target.value);
+        setCurrentPage(1);
+        closeLeadEditor();
+      }}
+      placeholder="Search by customer name, email, or phone..."
+      className="w-full rounded-xl border border-white/10 bg-dark-800 py-3 pl-12 pr-12 text-sm text-white outline-none placeholder:text-gray-600 focus:border-eco-cyan"
+    />
+
+    {leadSearch && (
+      <button
+        type="button"
+        onClick={() => {
+          setLeadSearch('');
+          setCurrentPage(1);
+          closeLeadEditor();
+        }}
+        aria-label="Clear lead search"
+        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-gray-500 transition-colors hover:bg-white/5 hover:text-white"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    )}
+  </label>
+
+  <select
+    value={leadStatusFilter}
+    onChange={(event) => {
+      setLeadStatusFilter(
+        event.target.value as LeadStatusFilter
+      );
+      setCurrentPage(1);
+      closeLeadEditor();
+    }}
+    className="rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none focus:border-eco-green"
+  >
+    <option value="all">All Statuses</option>
+
+    {LEAD_STATUSES.map((status) => (
+      <option key={status} value={status}>
+        {formatStatus(status)}
+      </option>
+    ))}
+  </select>
+
+  <select
+    value={leadSortOrder}
+    onChange={(event) => {
+      setLeadSortOrder(
+        event.target.value as LeadSortOrder
+      );
+      setCurrentPage(1);
+      closeLeadEditor();
+    }}
+    className="rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none focus:border-eco-cyan"
+  >
+    <option value="newest">Newest First</option>
+    <option value="oldest">Oldest First</option>
+  </select>
+</div>
+
+<div className="mt-2 text-xs text-gray-500">
+  Showing {filteredSortedLeads.length} matching lead
+  {filteredSortedLeads.length === 1 ? '' : 's'} from{' '}
+  {leads.length} total protected leads.
+</div>
 
             {isLeadsLoading && (
               <div className="mt-5 flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-8 text-sm text-gray-400">
@@ -727,11 +1136,43 @@ export function AdminDashboardPreview({
                 </div>
               )}
 
+ {!isLeadsLoading &&
+  !leadsError &&
+  leads.length > 0 &&
+  filteredSortedLeads.length === 0 && (
+    <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+      <Search className="mx-auto h-10 w-10 text-gray-500" />
+
+      <div className="mt-4 font-semibold text-white">
+        No Matching Leads
+      </div>
+
+      <p className="mt-2 text-sm text-gray-400">
+        Try another customer name, email address, or
+        phone number.
+      </p>
+
+      <button
+        type="button"
+        onClick={() => {
+        setLeadSearch('');
+        setLeadStatusFilter('all');
+        setLeadSortOrder('newest');
+        setCurrentPage(1);
+        closeLeadEditor();
+        }}
+         className="mt-4 rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+      >
+        Clear Search and Filters
+      </button>
+    </div>
+  )}
+
             {!isLeadsLoading &&
               !leadsError &&
-              leads.length > 0 && (
+              paginatedLeads.length > 0 && (
                 <div className="mt-5 space-y-3">
-                  {leads.slice(0, 5).map((lead) => {
+                  {paginatedLeads.map((lead) => {
                     const phoneNumber = [
                       lead.country_code,
                       lead.phone,
@@ -945,10 +1386,362 @@ export function AdminDashboardPreview({
           </GlassCard>
         </motion.div>
 
-        <div className="mt-6 text-center text-xs text-gray-500">
-          Showing the five newest of {leads.length}{' '}
-          protected lead submissions from Supabase.
+        {filteredSortedLeads.length > 0 && (
+  <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
+    <div className="text-xs text-gray-500">
+      Showing {pageStart + 1}–
+      {Math.min(
+        pageStart + LEADS_PER_PAGE,
+        filteredSortedLeads.length
+      )}{' '}
+      of {filteredSortedLeads.length} matching leads
+    </div>
+
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          setCurrentPage((page) =>
+            Math.max(1, page - 1)
+          );
+          closeLeadEditor();
+        }}
+        disabled={currentPage === 1}
+        className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Previous
+      </button>
+
+      <div className="rounded-xl border border-eco-cyan/20 bg-eco-cyan/10 px-4 py-2 text-sm font-semibold text-eco-cyan">
+        Page {currentPage} of {totalPages}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          setCurrentPage((page) =>
+            Math.min(totalPages, page + 1)
+          );
+          closeLeadEditor();
+        }}
+        disabled={currentPage === totalPages}
+        className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Next
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+)}
+  </>
+)}
+
+{activeAdminView === 'customers' && (
+  <motion.div
+    initial={{ opacity: 0, y: 24 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    className="mt-12"
+  >
+    <GlassCard glow="green" className="p-6">
+      <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-2xl font-bold text-white">
+            Customer Inquiries
+          </h3>
+
+          <p className="mt-1 text-sm text-gray-400">
+            Live protected quote and customer
+            requests from the EcoStep customers
+            table.
+          </p>
         </div>
+
+        <div className="inline-flex rounded-full border border-eco-green/20 bg-eco-green/10 px-3 py-1 text-xs text-eco-green">
+          {customers.length} Protected Records
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_180px]">
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+
+          <input
+            type="search"
+            value={customerSearch}
+            onChange={(event) => {
+              setCustomerSearch(event.target.value);
+              setCustomerCurrentPage(1);
+            }}
+            placeholder="Search name, email, phone, or location..."
+            className="w-full rounded-xl border border-white/10 bg-dark-800 py-3 pl-12 pr-12 text-sm text-white outline-none placeholder:text-gray-600 focus:border-eco-green"
+          />
+
+          {customerSearch && (
+            <button
+              type="button"
+              onClick={() => {
+                setCustomerSearch('');
+                setCustomerCurrentPage(1);
+              }}
+              aria-label="Clear customer search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-gray-500 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </label>
+
+        <select
+          value={customerRequestFilter}
+          onChange={(event) => {
+            setCustomerRequestFilter(
+              event.target.value
+            );
+            setCustomerCurrentPage(1);
+          }}
+          className="rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none focus:border-eco-green"
+        >
+          <option value="all">
+            All Request Types
+          </option>
+
+          {customerRequestTypes.map(
+            (requestType) => (
+              <option
+                key={requestType}
+                value={requestType}
+              >
+                {requestType}
+              </option>
+            )
+          )}
+        </select>
+
+        <select
+          value={customerSortOrder}
+          onChange={(event) => {
+            setCustomerSortOrder(
+              event.target
+                .value as CustomerSortOrder
+            );
+            setCustomerCurrentPage(1);
+          }}
+          className="rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none focus:border-eco-cyan"
+        >
+          <option value="newest">
+            Newest First
+          </option>
+
+          <option value="oldest">
+            Oldest First
+          </option>
+        </select>
+      </div>
+
+      <div className="mt-2 text-xs text-gray-500">
+        Showing {filteredSortedCustomers.length}{' '}
+        matching customer
+        {filteredSortedCustomers.length === 1
+          ? ''
+          : 's'}{' '}
+        from {customers.length} protected records.
+      </div>
+
+      {isCustomersLoading && (
+        <div className="mt-5 flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-8 text-sm text-gray-400">
+          <RefreshCw className="h-5 w-5 animate-spin text-eco-green" />
+          Loading protected customer inquiries...
+        </div>
+      )}
+
+      {!isCustomersLoading &&
+        customersError && (
+          <div className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-red-400" />
+
+              <div>
+                <div className="font-semibold text-red-400">
+                  Unable to Load Customers
+                </div>
+
+                <p className="mt-1 text-sm text-gray-400">
+                  {customersError}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void loadCustomers()
+                  }
+                  className="mt-4 rounded-xl border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/10"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {!isCustomersLoading &&
+        !customersError &&
+        customers.length === 0 && (
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+            <Users className="mx-auto h-10 w-10 text-gray-500" />
+
+            <div className="mt-4 font-semibold text-white">
+              No Customer Inquiries Yet
+            </div>
+
+            <p className="mt-2 text-sm text-gray-400">
+              New customer quote requests will
+              appear here automatically.
+            </p>
+          </div>
+        )}
+
+      {!isCustomersLoading &&
+        !customersError &&
+        customers.length > 0 &&
+        filteredSortedCustomers.length === 0 && (
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+            <Search className="mx-auto h-10 w-10 text-gray-500" />
+
+            <div className="mt-4 font-semibold text-white">
+              No Matching Customers
+            </div>
+
+            <p className="mt-2 text-sm text-gray-400">
+              Try another search or request-type
+              filter.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCustomerSearch('');
+                setCustomerRequestFilter('all');
+                setCustomerSortOrder('newest');
+                setCustomerCurrentPage(1);
+              }}
+              className="mt-4 rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              Clear Search and Filters
+            </button>
+          </div>
+        )}
+
+      {!isCustomersLoading &&
+        !customersError &&
+        paginatedCustomers.length > 0 && (
+          <div className="mt-5 space-y-3">
+            {paginatedCustomers.map(
+              (customer) => (
+                <div
+                  key={customer.id}
+                  className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 lg:flex-row lg:items-center lg:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="font-semibold text-white">
+                      {customer.full_name}
+                    </div>
+
+                    <div className="mt-1 text-sm text-gray-400">
+                      {customer.email ||
+                        'No email address'}
+                    </div>
+
+                    <div className="mt-1 text-xs text-gray-500">
+                      {customer.phone_number ||
+                        'No phone number'}{' '}
+                      •{' '}
+                      {formatLeadDate(
+                        customer.created_at
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-gray-400 lg:text-right">
+                    <div className="font-medium text-white">
+                      {formatCustomerRequestType(
+                        customer.request_type
+                      )}
+                    </div>
+
+                    <div className="mt-1 text-xs text-gray-500">
+                      {customer.location ||
+                        'Location not provided'}
+                    </div>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        )}
+
+      {filteredSortedCustomers.length > 0 && (
+        <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="text-xs text-gray-500">
+            Showing {customerPageStart + 1}–
+            {Math.min(
+              customerPageStart +
+                CUSTOMERS_PER_PAGE,
+              filteredSortedCustomers.length
+            )}{' '}
+            of {filteredSortedCustomers.length}{' '}
+            matching customers
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setCustomerCurrentPage((page) =>
+                  Math.max(1, page - 1)
+                )
+              }
+              disabled={
+                customerCurrentPage === 1
+              }
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </button>
+
+            <div className="rounded-xl border border-eco-green/20 bg-eco-green/10 px-4 py-2 text-sm font-semibold text-eco-green">
+              Page {customerCurrentPage} of{' '}
+              {customerTotalPages}
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setCustomerCurrentPage((page) =>
+                  Math.min(
+                    customerTotalPages,
+                    page + 1
+                  )
+                )
+              }
+              disabled={
+                customerCurrentPage ===
+                customerTotalPages
+              }
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </GlassCard>
+  </motion.div>
+)}
+
       </div>
 
 <AnimatePresence>
