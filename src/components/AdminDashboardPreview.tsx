@@ -33,6 +33,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Copy,
+  CheckCircle2,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { supabase } from '../lib/supabase';
@@ -168,6 +170,24 @@ const formatCustomerRequestType = (
   requestType: string | null
 ) => {
   return requestType?.trim() || 'General Inquiry';
+};
+
+const combinePhoneNumber = (
+  ...parts: Array<string | null | undefined>
+) => {
+  return parts
+    .filter(
+      (part): part is string =>
+        Boolean(part?.trim())
+    )
+    .join(' ');
+};
+
+const createPhoneLink = (phoneNumber: string) => {
+  return `tel:${phoneNumber.replace(
+    /[^\d+]/g,
+    ''
+  )}`;
 };
 
 const formatMoney = (
@@ -401,6 +421,16 @@ const [
   customerUpdateSuccess,
   setCustomerUpdateSuccess,
 ] = useState('');
+
+const [
+  contactActionMessage,
+  setContactActionMessage,
+] = useState('');
+
+const [
+  contactActionError,
+  setContactActionError,
+] = useState(false);
 
   const loadLeads = useCallback(async () => {
     if (!isAdminAuthenticated) {
@@ -1118,6 +1148,78 @@ const exportFilteredCustomers = () => {
     ],
     exportRows
   );
+};
+
+const copyContactValue = async (
+  value: string,
+  label: string
+) => {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return;
+  }
+
+  try {
+    if (
+      navigator.clipboard &&
+      window.isSecureContext
+    ) {
+      await navigator.clipboard.writeText(
+        trimmedValue
+      );
+    } else {
+      const temporaryTextArea =
+        document.createElement('textarea');
+
+      temporaryTextArea.value = trimmedValue;
+      temporaryTextArea.setAttribute(
+        'readonly',
+        ''
+      );
+
+      temporaryTextArea.style.position =
+        'fixed';
+      temporaryTextArea.style.opacity = '0';
+
+      document.body.appendChild(
+        temporaryTextArea
+      );
+
+      temporaryTextArea.select();
+
+      const copySucceeded =
+        document.execCommand('copy');
+
+      temporaryTextArea.remove();
+
+      if (!copySucceeded) {
+        throw new Error(
+          'Clipboard copy was unsuccessful.'
+        );
+      }
+    }
+
+    setContactActionError(false);
+    setContactActionMessage(
+      `${label} copied to clipboard.`
+    );
+  } catch (error) {
+    console.error(
+      '[Admin Dashboard] Unable to copy contact value:',
+      error
+    );
+
+    setContactActionError(true);
+    setContactActionMessage(
+      `Unable to copy ${label.toLowerCase()}.`
+    );
+  }
+
+  window.setTimeout(() => {
+    setContactActionMessage('');
+    setContactActionError(false);
+  }, 2500);
 };
 
   if (isAdminChecking) {
@@ -2216,6 +2318,35 @@ const exportFilteredCustomers = () => {
               <div className="mt-1 break-all text-sm font-medium text-white">
                 {selectedLead.email}
               </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href={`mailto:${
+                  selectedLead.email
+                }?subject=${encodeURIComponent(
+                  'EcoStep Solar Inquiry Follow-Up'
+                )}`}
+                className="inline-flex items-center gap-2 rounded-lg border border-eco-green/20 bg-eco-green/10 px-3 py-2 text-xs font-semibold text-eco-green transition-colors hover:bg-eco-green hover:text-dark-900"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                Email
+              </a>
+            
+              <button
+                type="button"
+                onClick={() =>
+                  void copyContactValue(
+                    selectedLead.email,
+                    'Email address'
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copy
+              </button>
+            </div>
+
             </div>
           </div>
 
@@ -2235,6 +2366,44 @@ const exportFilteredCustomers = () => {
                   .filter(Boolean)
                   .join(' ') || 'No phone number'}
               </div>
+ 
+              {combinePhoneNumber(
+                selectedLead.country_code,
+                selectedLead.phone
+              ) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href={createPhoneLink(
+                      combinePhoneNumber(
+                        selectedLead.country_code,
+                        selectedLead.phone
+                      )
+                    )}
+                    className="inline-flex items-center gap-2 rounded-lg border border-eco-cyan/20 bg-eco-cyan/10 px-3 py-2 text-xs font-semibold text-eco-cyan transition-colors hover:bg-eco-cyan hover:text-dark-900"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    Call
+                  </a>
+              
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void copyContactValue(
+                        combinePhoneNumber(
+                          selectedLead.country_code,
+                          selectedLead.phone
+                        ),
+                        'Phone number'
+                      )
+                    }
+                    className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </button>
+                </div>
+              )}
+
             </div>
           </div>
 
@@ -2252,6 +2421,24 @@ const exportFilteredCustomers = () => {
             </div>
           </div>
         </div>
+
+        {contactActionMessage && (
+          <div
+            className={`mt-3 flex items-center gap-2 rounded-xl border p-3 text-sm ${
+              contactActionError
+                ? 'border-red-500/30 bg-red-500/10 text-red-400'
+                : 'border-eco-green/30 bg-eco-green/10 text-eco-green'
+            }`}
+          >
+            {contactActionError ? (
+              <AlertTriangle className="h-4 w-4" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+        
+            {contactActionMessage}
+          </div>
+        )}
 
         {/* Full System Calculations */}
         <div className="mt-6">
@@ -2674,6 +2861,37 @@ const exportFilteredCustomers = () => {
                 {selectedCustomer.email ||
                   'No email address'}
               </div>
+
+              {selectedCustomer.email && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href={`mailto:${
+                      selectedCustomer.email
+                    }?subject=${encodeURIComponent(
+                      'EcoStep Customer Inquiry Follow-Up'
+                    )}`}
+                    className="inline-flex items-center gap-2 rounded-lg border border-eco-green/20 bg-eco-green/10 px-3 py-2 text-xs font-semibold text-eco-green transition-colors hover:bg-eco-green hover:text-dark-900"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    Email
+                  </a>
+              
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void copyContactValue(
+                        selectedCustomer.email || '',
+                        'Email address'
+                      )
+                    }
+                    className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </button>
+                </div>
+              )}
+
             </div>
           </div>
 
@@ -2691,6 +2909,35 @@ const exportFilteredCustomers = () => {
               </div>
             </div>
           </div>
+
+          {selectedCustomer.phone_number && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href={createPhoneLink(
+                  selectedCustomer.phone_number
+                )}
+                className="inline-flex items-center gap-2 rounded-lg border border-eco-cyan/20 bg-eco-cyan/10 px-3 py-2 text-xs font-semibold text-eco-cyan transition-colors hover:bg-eco-cyan hover:text-dark-900"
+              >
+                <Phone className="h-3.5 w-3.5" />
+                Call
+              </a>
+          
+              <button
+                type="button"
+                onClick={() =>
+                  void copyContactValue(
+                    selectedCustomer.phone_number ||
+                      '',
+                    'Phone number'
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copy
+              </button>
+            </div>
+          )}
 
           <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
             <FileText className="mt-0.5 h-5 w-5 text-eco-amber" />
@@ -2723,6 +2970,24 @@ const exportFilteredCustomers = () => {
             </div>
           </div>
         </div>
+
+        {contactActionMessage && (
+          <div
+            className={`mt-3 flex items-center gap-2 rounded-xl border p-3 text-sm ${
+              contactActionError
+                ? 'border-red-500/30 bg-red-500/10 text-red-400'
+                : 'border-eco-green/30 bg-eco-green/10 text-eco-green'
+            }`}
+          >
+            {contactActionError ? (
+              <AlertTriangle className="h-4 w-4" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+        
+            {contactActionMessage}
+          </div>
+        )}
 
         {/* Customer Management */}
         <div className="mt-6 rounded-2xl border border-eco-green/20 bg-eco-green/5 p-5">
