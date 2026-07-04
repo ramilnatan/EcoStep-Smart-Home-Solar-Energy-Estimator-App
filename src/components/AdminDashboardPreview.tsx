@@ -32,6 +32,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { supabase } from '../lib/supabase';
@@ -219,6 +220,83 @@ const getStatusClasses = (status: string | null) => {
     default:
       return 'border-eco-green/30 bg-eco-green/10 text-eco-green';
   }
+};
+
+type CsvValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined;
+
+const escapeCsvValue = (value: CsvValue) => {
+  if (value === null || value === undefined) {
+    return '""';
+  }
+
+  const stringValue = String(value);
+
+  const protectedValue =
+    typeof value === 'string' &&
+    /^[=+\-@\t\r]/.test(stringValue)
+      ? `'${stringValue}`
+      : stringValue;
+
+  return `"${protectedValue.replace(/"/g, '""')}"`;
+};
+
+const formatCsvDate = (
+  value: string | null
+) => {
+  if (!value) {
+    return '';
+  }
+
+  const parsedDate = new Date(value);
+
+  return Number.isNaN(parsedDate.getTime())
+    ? value
+    : parsedDate.toISOString();
+};
+
+const downloadCsvFile = (
+  filename: string,
+  headers: string[],
+  rows: CsvValue[][]
+) => {
+  const csvContent = [
+    headers,
+    ...rows,
+  ]
+    .map((row) =>
+      row.map(escapeCsvValue).join(',')
+    )
+    .join('\r\n');
+
+  const csvBlob = new Blob(
+    [`\uFEFF${csvContent}`],
+    {
+      type: 'text/csv;charset=utf-8;',
+    }
+  );
+
+  const downloadUrl =
+    URL.createObjectURL(csvBlob);
+
+  const downloadLink =
+    document.createElement('a');
+
+  downloadLink.href = downloadUrl;
+  downloadLink.download = filename;
+  downloadLink.style.display = 'none';
+
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+
+  window.setTimeout(() => {
+    URL.revokeObjectURL(downloadUrl);
+  }, 0);
 };
 
 export function AdminDashboardPreview({
@@ -915,6 +993,133 @@ useEffect(() => {
   customerTotalPages,
 ]);
 
+const exportFilteredLeads = () => {
+  if (filteredSortedLeads.length === 0) {
+    return;
+  }
+
+  const exportRows = filteredSortedLeads.map(
+    (lead) => {
+      const phoneNumber = [
+        lead.country_code,
+        lead.phone,
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      const applianceSummary =
+        parseSelectedAppliances(
+          lead.selected_appliances
+        )
+          .map((appliance) =>
+            [
+              appliance.name ||
+                'Custom Appliance',
+              `${Number(
+                appliance.watts ?? 0
+              )} W`,
+              `Qty ${Number(
+                appliance.quantity ?? 1
+              )}`,
+              `${Number(
+                appliance.hoursPerDay ?? 0
+              )} hrs/day`,
+            ].join(' | ')
+          )
+          .join('; ');
+
+      return [
+        formatStatus(lead.status),
+        lead.full_name,
+        lead.email,
+        phoneNumber,
+        formatCsvDate(lead.created_at),
+        lead.currency || '',
+        toNumber(lead.monthly_bill),
+        toNumber(lead.estimated_kw),
+        toNumber(lead.estimated_battery),
+        toNumber(lead.daily_consumption),
+        toNumber(lead.backup_runtime),
+        toNumber(lead.monthly_savings),
+        toNumber(lead.roi_years),
+        toNumber(lead.grid_independence),
+        applianceSummary,
+        lead.notes || '',
+        lead.admin_notes || '',
+      ];
+    }
+  );
+
+  downloadCsvFile(
+    `ecostep-leads-${
+      new Date().toISOString().slice(0, 10)
+    }.csv`,
+    [
+      'Status',
+      'Full Name',
+      'Email',
+      'Phone',
+      'Submitted At',
+      'Currency',
+      'Monthly Bill',
+      'Solar System kW',
+      'Battery Capacity kWh',
+      'Daily Consumption kWh',
+      'Backup Runtime Hours',
+      'Monthly Savings',
+      'ROI Years',
+      'Grid Independence Percent',
+      'Selected Appliances',
+      'Customer Notes',
+      'Private Admin Notes',
+    ],
+    exportRows
+  );
+};
+
+const exportFilteredCustomers = () => {
+  if (
+    filteredSortedCustomers.length === 0
+  ) {
+    return;
+  }
+
+  const exportRows =
+    filteredSortedCustomers.map(
+      (customer) => [
+        formatStatus(customer.status),
+        customer.full_name,
+        customer.email || '',
+        customer.phone_number || '',
+        customer.location || '',
+        formatCustomerRequestType(
+          customer.request_type
+        ),
+        formatCsvDate(
+          customer.created_at
+        ),
+        customer.admin_notes || '',
+      ]
+    );
+
+  downloadCsvFile(
+    `ecostep-customers-${
+      new Date().toISOString().slice(0, 10)
+    }.csv`,
+    [
+      'Status',
+      'Full Name',
+      'Email',
+      'Phone',
+      'Location',
+      'Request Type',
+      'Submitted At',
+      'Private Admin Notes',
+    ],
+    exportRows
+  );
+};
+
   if (isAdminChecking) {
     return (
       <section
@@ -1154,9 +1359,23 @@ useEffect(() => {
                 </p>
               </div>
 
-              <div className="inline-flex rounded-full border border-eco-green/20 bg-eco-green/10 px-3 py-1 text-xs text-eco-green">
-                Live Supabase Data
-              </div>
+              <div className="flex flex-wrap items-center gap-2">
+  <button
+    type="button"
+    onClick={exportFilteredLeads}
+    disabled={
+      filteredSortedLeads.length === 0
+    }
+    className="flex items-center gap-2 rounded-xl border border-eco-cyan/20 bg-eco-cyan/10 px-4 py-2 text-xs font-semibold text-eco-cyan transition-colors hover:bg-eco-cyan hover:text-dark-900 disabled:cursor-not-allowed disabled:opacity-40"
+  >
+    <Download className="h-4 w-4" />
+    Export CSV
+  </button>
+
+  <div className="inline-flex rounded-full border border-eco-green/20 bg-eco-green/10 px-3 py-1 text-xs text-eco-green">
+    Live Supabase Data
+  </div>
+</div>
             </div>
 
 <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_180px]">
@@ -1605,9 +1824,24 @@ useEffect(() => {
           </p>
         </div>
 
-        <div className="inline-flex rounded-full border border-eco-green/20 bg-eco-green/10 px-3 py-1 text-xs text-eco-green">
-          {customers.length} Protected Records
-        </div>
+        <div className="flex flex-wrap items-center gap-2">
+  <button
+    type="button"
+    onClick={exportFilteredCustomers}
+    disabled={
+      filteredSortedCustomers.length === 0
+    }
+    className="flex items-center gap-2 rounded-xl border border-eco-green/20 bg-eco-green/10 px-4 py-2 text-xs font-semibold text-eco-green transition-colors hover:bg-eco-green hover:text-dark-900 disabled:cursor-not-allowed disabled:opacity-40"
+  >
+    <Download className="h-4 w-4" />
+    Export CSV
+  </button>
+
+  <div className="inline-flex rounded-full border border-eco-green/20 bg-eco-green/10 px-3 py-1 text-xs text-eco-green">
+    {customers.length} Protected Records
+  </div>
+</div>
+
       </div>
 
       <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_180px]">
