@@ -102,6 +102,8 @@ type CustomerRecord = {
   location: string | null;
   created_at: string;
   request_type: string | null;
+  status: string | null;
+  admin_notes: string | null;
 };
 
 type LeadAppliance = {
@@ -289,6 +291,39 @@ const [
   setCustomerCurrentPage,
 ] = useState(1);
 
+const [selectedCustomer, setSelectedCustomer] =
+  useState<CustomerRecord | null>(null);
+
+const [
+  editingCustomerId,
+  setEditingCustomerId,
+] = useState<string | null>(null);
+
+const [
+  draftCustomerStatus,
+  setDraftCustomerStatus,
+] = useState<LeadStatus>('new');
+
+const [
+  draftCustomerAdminNotes,
+  setDraftCustomerAdminNotes,
+] = useState('');
+
+const [
+  isCustomerSaving,
+  setIsCustomerSaving,
+] = useState(false);
+
+const [
+  customerUpdateError,
+  setCustomerUpdateError,
+] = useState('');
+
+const [
+  customerUpdateSuccess,
+  setCustomerUpdateSuccess,
+] = useState('');
+
   const loadLeads = useCallback(async () => {
     if (!isAdminAuthenticated) {
       setLeads([]);
@@ -366,7 +401,9 @@ const [
         phone_number,
         location,
         created_at,
-        request_type
+        request_type,
+        status,
+        admin_notes
       `)
       .order('created_at', {
         ascending: false,
@@ -390,6 +427,114 @@ const [
     setIsCustomersLoading(false);
   }
 }, [isAdminAuthenticated]);
+
+const openCustomerDetails = (
+  customer: CustomerRecord
+) => {
+  const normalizedStatus =
+    (customer.status || 'new').toLowerCase() as LeadStatus;
+
+  setSelectedCustomer(customer);
+  setEditingCustomerId(customer.id);
+
+  setDraftCustomerStatus(
+    LEAD_STATUSES.includes(normalizedStatus)
+      ? normalizedStatus
+      : 'new'
+  );
+
+  setDraftCustomerAdminNotes(
+    customer.admin_notes ?? ''
+  );
+
+  setCustomerUpdateError('');
+  setCustomerUpdateSuccess('');
+};
+
+const closeCustomerDetails = () => {
+  setSelectedCustomer(null);
+  setEditingCustomerId(null);
+  setDraftCustomerStatus('new');
+  setDraftCustomerAdminNotes('');
+  setCustomerUpdateError('');
+  setCustomerUpdateSuccess('');
+};
+
+const saveCustomerChanges = async () => {
+  if (
+    !editingCustomerId ||
+    !isAdminAuthenticated
+  ) {
+    return;
+  }
+
+  setIsCustomerSaving(true);
+  setCustomerUpdateError('');
+  setCustomerUpdateSuccess('');
+
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .update({
+        status: draftCustomerStatus,
+        admin_notes:
+          draftCustomerAdminNotes.trim() || null,
+      })
+      .eq('id', editingCustomerId)
+      .select(`
+        id,
+        status,
+        admin_notes
+      `)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    setCustomers((currentCustomers) =>
+      currentCustomers.map((customer) =>
+        customer.id === data.id
+          ? {
+              ...customer,
+              status: data.status,
+              admin_notes: data.admin_notes,
+            }
+          : customer
+      )
+    );
+
+    setSelectedCustomer((currentCustomer) => {
+      if (
+        !currentCustomer ||
+        currentCustomer.id !== data.id
+      ) {
+        return currentCustomer;
+      }
+
+      return {
+        ...currentCustomer,
+        status: data.status,
+        admin_notes: data.admin_notes,
+      };
+    });
+
+    setCustomerUpdateSuccess(
+      'Customer status and admin notes saved successfully.'
+    );
+  } catch (error) {
+    console.error(
+      '[Admin Dashboard] Unable to update customer:',
+      error
+    );
+
+    setCustomerUpdateError(
+      'EcoStep could not save the customer changes. Please try again.'
+    );
+  } finally {
+    setIsCustomerSaving(false);
+  }
+};
 
   const openLeadEditor = (lead: LeadRecord) => {
     const normalizedStatus =
@@ -917,6 +1062,7 @@ useEffect(() => {
       onClick={() => {
         setActiveAdminView('leads');
         closeLeadDetails();
+        closeCustomerDetails();
       }}
       className={`rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
         activeAdminView === 'leads'
@@ -932,6 +1078,7 @@ useEffect(() => {
       onClick={() => {
         setActiveAdminView('customers');
         closeLeadDetails();
+        closeCustomerDetails();
       }}
       className={`rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
         activeAdminView === 'customers'
@@ -1639,43 +1786,63 @@ useEffect(() => {
           <div className="mt-5 space-y-3">
             {paginatedCustomers.map(
               (customer) => (
+                
                 <div
-                  key={customer.id}
-                  className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 lg:flex-row lg:items-center lg:justify-between"
-                >
+                key={customer.id}
+                className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                 >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">
                     <div className="font-semibold text-white">
                       {customer.full_name}
                     </div>
-
+              
                     <div className="mt-1 text-sm text-gray-400">
-                      {customer.email ||
-                        'No email address'}
+                      {customer.email || 'No email address'}
                     </div>
-
+              
                     <div className="mt-1 text-xs text-gray-500">
-                      {customer.phone_number ||
-                        'No phone number'}{' '}
-                      •{' '}
-                      {formatLeadDate(
-                        customer.created_at
-                      )}
+                      {customer.phone_number || 'No phone number'} •{' '}
+                      {formatLeadDate(customer.created_at)}
                     </div>
                   </div>
-
+              
                   <div className="text-sm text-gray-400 lg:text-right">
                     <div className="font-medium text-white">
                       {formatCustomerRequestType(
                         customer.request_type
                       )}
                     </div>
-
+              
                     <div className="mt-1 text-xs text-gray-500">
                       {customer.location ||
                         'Location not provided'}
                     </div>
                   </div>
+              
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
+                        customer.status
+                      )}`}
+                    >
+                      {formatStatus(customer.status)}
+                    </span>
+              
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openCustomerDetails(customer)
+                      }
+                      className="flex items-center gap-2 rounded-xl border border-eco-green/20 bg-eco-green/10 px-3 py-2 text-xs font-semibold text-eco-green transition-colors hover:bg-eco-green hover:text-dark-900"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Details
+                    </button>
+                  </div>
                 </div>
+              </div>
+
               )
             )}
           </div>
@@ -1742,7 +1909,7 @@ useEffect(() => {
   </motion.div>
 )}
 
-      </div>
+     </div>
 
 <AnimatePresence>
   {selectedLead && (
@@ -1753,7 +1920,7 @@ useEffect(() => {
       onClick={() => {
         if (!isLeadSaving) {
           closeLeadDetails();
-        }
+          }
       }}
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm"
     >
@@ -2182,6 +2349,258 @@ useEffect(() => {
        </motion.div>
     </motion.div>
   )}
+
+  {selectedCustomer && (
+    <motion.div
+      key="customer-details"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={() => {
+        if (!isCustomerSaving) {
+          closeCustomerDetails();
+        }
+      }}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{
+          opacity: 0,
+          scale: 0.96,
+          y: 20,
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+          y: 0,
+        }}
+        exit={{
+          opacity: 0,
+          scale: 0.96,
+          y: 20,
+        }}
+        transition={{ duration: 0.2 }}
+        onClick={(event) =>
+          event.stopPropagation()
+        }
+        className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/10 bg-dark-800 p-6 shadow-2xl sm:p-8"
+      >
+        <button
+          type="button"
+          onClick={closeCustomerDetails}
+          disabled={isCustomerSaving}
+          aria-label="Close customer details"
+          className="absolute right-5 top-5 rounded-full border border-white/10 bg-white/5 p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="pr-12">
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
+                selectedCustomer.status
+              )}`}
+            >
+              {formatStatus(
+                selectedCustomer.status
+              )}
+            </span>
+
+            <span className="inline-flex items-center gap-2 text-xs text-gray-500">
+              <CalendarDays className="h-4 w-4" />
+              Submitted{' '}
+              {formatLeadDate(
+                selectedCustomer.created_at
+              )}
+            </span>
+          </div>
+
+          <h3 className="mt-4 text-3xl font-bold text-white">
+            {selectedCustomer.full_name}
+          </h3>
+
+          <p className="mt-2 text-sm text-gray-400">
+            Complete protected customer inquiry
+            and follow-up management.
+          </p>
+        </div>
+
+        {/* Customer Information */}
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
+          <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <Mail className="mt-0.5 h-5 w-5 text-eco-green" />
+
+            <div className="min-w-0">
+              <div className="text-xs text-gray-500">
+                Email Address
+              </div>
+
+              <div className="mt-1 break-all text-sm font-medium text-white">
+                {selectedCustomer.email ||
+                  'No email address'}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <Phone className="mt-0.5 h-5 w-5 text-eco-cyan" />
+
+            <div>
+              <div className="text-xs text-gray-500">
+                Phone Number
+              </div>
+
+              <div className="mt-1 text-sm font-medium text-white">
+                {selectedCustomer.phone_number ||
+                  'No phone number'}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <FileText className="mt-0.5 h-5 w-5 text-eco-amber" />
+
+            <div>
+              <div className="text-xs text-gray-500">
+                Request Type
+              </div>
+
+              <div className="mt-1 text-sm font-medium text-white">
+                {formatCustomerRequestType(
+                  selectedCustomer.request_type
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <Users className="mt-0.5 h-5 w-5 text-eco-green" />
+
+            <div>
+              <div className="text-xs text-gray-500">
+                Customer Location
+              </div>
+
+              <div className="mt-1 text-sm font-medium text-white">
+                {selectedCustomer.location ||
+                  'Location not provided'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Customer Management */}
+        <div className="mt-6 rounded-2xl border border-eco-green/20 bg-eco-green/5 p-5">
+          <div className="flex items-center gap-2">
+            <PencilLine className="h-5 w-5 text-eco-green" />
+
+            <h4 className="text-xl font-bold text-white">
+              Customer Management
+            </h4>
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-gray-300">
+                Customer Status
+              </span>
+
+              <select
+                value={draftCustomerStatus}
+                onChange={(event) => {
+                  setDraftCustomerStatus(
+                    event.target
+                      .value as LeadStatus
+                  );
+
+                  setCustomerUpdateError('');
+                  setCustomerUpdateSuccess('');
+                }}
+                disabled={isCustomerSaving}
+                className="w-full rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none focus:border-eco-green disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {LEAD_STATUSES.map((status) => (
+                  <option
+                    key={status}
+                    value={status}
+                  >
+                    {formatStatus(status)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-gray-300">
+                Private Admin Notes
+              </span>
+
+              <textarea
+                value={draftCustomerAdminNotes}
+                onChange={(event) => {
+                  setDraftCustomerAdminNotes(
+                    event.target.value
+                  );
+
+                  setCustomerUpdateError('');
+                  setCustomerUpdateSuccess('');
+                }}
+                disabled={isCustomerSaving}
+                rows={5}
+                placeholder="Add follow-up details, quotation notes, or next actions..."
+                className="w-full resize-none rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-eco-green disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </label>
+          </div>
+
+          {customerUpdateError && (
+            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+              {customerUpdateError}
+            </div>
+          )}
+
+          {customerUpdateSuccess && (
+            <div className="mt-4 rounded-xl border border-eco-green/30 bg-eco-green/10 p-3 text-sm text-eco-green">
+              {customerUpdateSuccess}
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={closeCustomerDetails}
+              disabled={isCustomerSaving}
+              className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <X className="h-4 w-4" />
+              Close
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                void saveCustomerChanges()
+              }
+              disabled={isCustomerSaving}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan px-5 py-3 text-sm font-semibold text-dark-900 transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isCustomerSaving ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+
+              {isCustomerSaving
+                ? 'Saving Changes...'
+                : 'Save Customer Changes'}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+
 </AnimatePresence>
 </section>
   
