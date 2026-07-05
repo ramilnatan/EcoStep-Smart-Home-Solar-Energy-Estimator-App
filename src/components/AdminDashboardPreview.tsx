@@ -63,7 +63,10 @@ const LEAD_STATUSES: LeadStatus[] = [
   'archived',
 ];
 
-type LeadStatusFilter = 'all' | LeadStatus;
+type LeadStatusFilter =
+  | 'all'
+  | 'pending'
+  | LeadStatus;
 
 type LeadSortOrder = 'newest' | 'oldest';
 
@@ -240,6 +243,124 @@ const getStatusClasses = (status: string | null) => {
     default:
       return 'border-eco-green/30 bg-eco-green/10 text-eco-green';
   }
+};
+
+const MILLISECONDS_PER_DAY =
+  1000 * 60 * 60 * 24;
+
+const getInquiryAgeDays = (
+  createdAt: string | null
+) => {
+  if (!createdAt) {
+    return 0;
+  }
+
+  const createdDate = new Date(createdAt);
+
+  if (Number.isNaN(createdDate.getTime())) {
+    return 0;
+  }
+
+  const currentDate = new Date();
+
+  const createdDayUtc = Date.UTC(
+    createdDate.getUTCFullYear(),
+    createdDate.getUTCMonth(),
+    createdDate.getUTCDate()
+  );
+
+  const currentDayUtc = Date.UTC(
+    currentDate.getUTCFullYear(),
+    currentDate.getUTCMonth(),
+    currentDate.getUTCDate()
+  );
+
+  return Math.max(
+    0,
+    Math.floor(
+      (currentDayUtc - createdDayUtc) /
+        MILLISECONDS_PER_DAY
+    )
+  );
+};
+
+const getInquiryBadge = (
+  status: string | null,
+  createdAt: string | null
+) => {
+  const normalizedStatus = (
+    status || 'new'
+  )
+    .trim()
+    .toLowerCase();
+
+  const ageDays =
+    getInquiryAgeDays(createdAt);
+
+  if (normalizedStatus !== 'new') {
+    return {
+      label: formatStatus(status),
+      classes: getStatusClasses(status),
+      ageDays,
+    };
+  }
+
+  if (ageDays <= 7) {
+    return {
+      label: 'New',
+      classes:
+        'border-eco-green/30 bg-eco-green/10 text-eco-green',
+      ageDays,
+    };
+  }
+
+  if (ageDays <= 14) {
+    return {
+      label: `${ageDays} Days Pending`,
+      classes:
+        'border-eco-amber/30 bg-eco-amber/10 text-eco-amber',
+      ageDays,
+    };
+  }
+
+  return {
+    label: `${ageDays} Days Pending`,
+    classes:
+      'border-red-500/30 bg-red-500/10 text-red-400',
+    ageDays,
+  };
+};
+
+const isNewInquiry = (
+  status: string | null,
+  createdAt: string | null
+) => {
+  const normalizedStatus = (
+    status || 'new'
+  )
+    .trim()
+    .toLowerCase();
+
+  return (
+    normalizedStatus === 'new' &&
+    getInquiryAgeDays(createdAt) <= 7
+  );
+};
+
+const isPendingInquiry = (
+  status: string | null,
+  createdAt: string | null
+) => {
+  const normalizedStatus = (
+    status || 'new'
+  )
+    .trim()
+    .toLowerCase();
+
+  return (
+    normalizedStatus === 'new' &&
+    getInquiryAgeDays(createdAt) > 7
+  );
 };
 
 type CsvValue =
@@ -773,9 +894,12 @@ useEffect(() => {
 
   const stats = useMemo(() => {
     const newLeadCount = leads.filter(
-      (lead) =>
-        (lead.status || 'new').toLowerCase() === 'new'
-    ).length;
+       (lead) =>
+       isNewInquiry(
+       lead.status,
+       lead.created_at
+       )
+      ).length;
 
     const systemSizes = leads
       .map((lead) => toNumber(lead.estimated_kw))
@@ -814,7 +938,7 @@ useEffect(() => {
         label: 'New Leads',
         value: newLeadCount.toString(),
         description:
-          'New submissions awaiting first follow-up',
+           'Submissions received within the last 7 days',
         icon: BarChart3,
         glow: 'cyan',
       },
@@ -879,10 +1003,31 @@ const searchedLeads = useMemo(() => {
 
 const filteredSortedLeads = useMemo(() => {
   const filteredLeads = searchedLeads.filter(
-    (lead) =>
-      leadStatusFilter === 'all' ||
-      (lead.status || 'new').toLowerCase() ===
-        leadStatusFilter
+    (lead) => {
+      if (leadStatusFilter === 'all') {
+        return true;
+      }
+
+      if (leadStatusFilter === 'new') {
+        return isNewInquiry(
+          lead.status,
+          lead.created_at
+        );
+      }
+
+      if (leadStatusFilter === 'pending') {
+        return isPendingInquiry(
+          lead.status,
+          lead.created_at
+        );
+      }
+
+      return (
+        (lead.status || 'new')
+          .trim()
+          .toLowerCase() === leadStatusFilter
+      );
+    }
   );
 
   return [...filteredLeads].sort((firstLead, secondLead) => {
@@ -1059,6 +1204,10 @@ const exportFilteredLeads = () => {
           .join('; ');
 
       return [
+        getInquiryBadge(
+        lead.status,
+        lead.created_at
+        ).label,
         formatStatus(lead.status),
         lead.full_name,
         lead.email,
@@ -1085,7 +1234,8 @@ const exportFilteredLeads = () => {
       new Date().toISOString().slice(0, 10)
     }.csv`,
     [
-      'Status',
+      'Inquiry Badge',
+      'CRM Status',
       'Full Name',
       'Email',
       'Phone',
@@ -1116,7 +1266,11 @@ const exportFilteredCustomers = () => {
 
   const exportRows =
     filteredSortedCustomers.map(
-      (customer) => [
+        (customer) => [
+        getInquiryBadge(
+          customer.status,
+          customer.created_at
+        ).label,
         formatStatus(customer.status),
         customer.full_name,
         customer.email || '',
@@ -1137,7 +1291,8 @@ const exportFilteredCustomers = () => {
       new Date().toISOString().slice(0, 10)
     }.csv`,
     [
-      'Status',
+      'Inquiry Badge',
+      'CRM Status',
       'Full Name',
       'Email',
       'Phone',
@@ -1523,13 +1678,25 @@ const copyContactValue = async (
     }}
     className="rounded-xl border border-white/10 bg-dark-800 px-4 py-3 text-sm text-white outline-none focus:border-eco-green"
   >
-    <option value="all">All Statuses</option>
+    <option value="all">
+  All Statuses
+</option>
 
-    {LEAD_STATUSES.map((status) => (
-      <option key={status} value={status}>
-        {formatStatus(status)}
-      </option>
-    ))}
+<option value="new">
+  New — 0 to 7 Days
+</option>
+
+<option value="pending">
+  Pending — 8+ Days
+</option>
+
+{LEAD_STATUSES.filter(
+  (status) => status !== 'new'
+).map((status) => (
+  <option key={status} value={status}>
+    {formatStatus(status)}
+  </option>
+))}
   </select>
 
   <select
@@ -1648,6 +1815,11 @@ const copyContactValue = async (
                       .filter(Boolean)
                       .join(' ');
 
+                      const inquiryBadge = getInquiryBadge(
+                        lead.status,
+                        lead.created_at
+                      );
+
                       return (
                         <div
                           key={lead.id}
@@ -1697,13 +1869,14 @@ const copyContactValue = async (
                             </div>
                       
                             <div className="flex items-center gap-3">
-                              <span
-                                className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
-                                  lead.status
-                                )}`}
-                              >
-                                {formatStatus(lead.status)}
-                              </span>
+                            <span
+                                title={`${inquiryBadge.ageDays} day${
+                                   inquiryBadge.ageDays === 1 ? '' : 's'
+                                } since submission`}
+                                className={`rounded-full border px-3 py-1 text-xs font-medium ${inquiryBadge.classes}`}
+                            >
+                               {inquiryBadge.label}
+                            </span>
 
                               <button
                                 type="button"
@@ -2157,13 +2330,23 @@ const copyContactValue = async (
                   </div>
               
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
-                        customer.status
-                      )}`}
-                    >
-                      {formatStatus(customer.status)}
-                    </span>
+                  <span
+                    title={`${getInquiryBadge(
+                       customer.status,
+                       customer.created_at
+                    ).ageDays} days since submission`}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${getInquiryBadge(
+                       customer.status,
+                       customer.created_at
+                    ).classes}`}
+                  >
+                  {
+                     getInquiryBadge(
+                     customer.status,
+                     customer.created_at
+                   ).label
+                  }
+                  </span>
               
                     <button
                       type="button"
@@ -2280,13 +2463,23 @@ const copyContactValue = async (
 
         <div className="pr-12">
           <div className="flex flex-wrap items-center gap-3">
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
-                selectedLead.status
-              )}`}
-            >
-              {formatStatus(selectedLead.status)}
-            </span>
+          <span
+            title={`${getInquiryBadge(
+            selectedLead.status,
+            selectedLead.created_at
+            ).ageDays} days since submission`}
+            className={`rounded-full border px-3 py-1 text-xs font-medium ${getInquiryBadge(
+            selectedLead.status,
+            selectedLead.created_at
+            ).classes}`}
+          >
+            {
+            getInquiryBadge(
+            selectedLead.status,
+            selectedLead.created_at
+            ).label
+            }
+          </span>
 
             <span className="inline-flex items-center gap-2 text-xs text-gray-500">
               <CalendarDays className="h-4 w-4" />
@@ -2818,15 +3011,23 @@ const copyContactValue = async (
 
         <div className="pr-12">
           <div className="flex flex-wrap items-center gap-3">
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClasses(
-                selectedCustomer.status
-              )}`}
-            >
-              {formatStatus(
-                selectedCustomer.status
-              )}
-            </span>
+          <span
+             title={`${getInquiryBadge(
+             selectedCustomer.status,
+             selectedCustomer.created_at
+              ).ageDays} days since submission`}
+              className={`rounded-full border px-3 py-1 text-xs font-medium ${getInquiryBadge(
+              selectedCustomer.status,
+              selectedCustomer.created_at
+              ).classes}`}
+           >
+              {
+              getInquiryBadge(
+              selectedCustomer.status,
+              selectedCustomer.created_at
+              ).label
+              }
+          </span>
 
             <span className="inline-flex items-center gap-2 text-xs text-gray-500">
               <CalendarDays className="h-4 w-4" />
