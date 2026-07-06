@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo, } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Battery, BarChart3, FileText, ChevronUp, ChevronDown, Menu, X } from 'lucide-react';
 import { Hero } from './components/Hero';
 import { EnergyEstimator } from './components/EnergyEstimator';
+import { EnergyVisualization } from './components/EnergyVisualization';
 import { DemoAccessBanner } from './components/DemoAccessBanner';
 import { SolarGuide } from './components/SolarGuide';
 import { LeadCapture } from './components/LeadCapture';
@@ -19,6 +20,7 @@ import { EstimateDisclaimer } from './components/EstimateDisclaimer';
 import { WhyEcoStep } from './components/WhyEcoStep';
 import { FAQSection } from './components/FAQSection';
 import { supabase } from './lib/supabase';
+import { ECOSTEP_PLANS } from './config/ecostepPlans';
 
 
 const primaryNavItems = [
@@ -54,6 +56,13 @@ function App() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isAdminChecking, setIsAdminChecking] = useState(true);
   const [adminEmail, setAdminEmail] = useState('');
+  const currentPlan = useMemo(
+    () =>
+      isAdminAuthenticated
+        ? ECOSTEP_PLANS.admin
+        : ECOSTEP_PLANS.demo,
+    [isAdminAuthenticated]
+  );
   const [calculationData, setCalculationData] = useState<{
     monthlyBill: number;
     selectedAppliances: Appliance[];
@@ -485,7 +494,11 @@ return () => window.removeEventListener('scroll', handleScroll);
   
         <SolarGuide onScrollToEstimator={scrollToEstimator} />
 
-        <FullAccessGate />
+        {currentPlan.features.hybridPowerFlow ? (
+          <EnergyVisualization />
+        ) : (
+          <FullAccessGate />
+        )}
 
         <AccessPortalPreview
          isAdminAuthenticated={isAdminAuthenticated}
