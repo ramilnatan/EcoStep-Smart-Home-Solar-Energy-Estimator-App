@@ -1,5 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   Refrigerator,
   Lightbulb,
@@ -23,6 +27,9 @@ import { appliances } from '../data/appliances';
 import { currencies, formatCurrency } from '../data/currencies';
 import { Appliance, CalculationResult } from '../types';
 import { calculateEnergyResults } from '../utils/calculations';
+import type {
+  EcoStepPlanConfig,
+} from '../config/ecostepPlans';
 
 const iconMap: Record<string, React.ElementType> = {
   Refrigerator,
@@ -40,6 +47,7 @@ const iconMap: Record<string, React.ElementType> = {
 type EnergyEstimatorProps = {
   isAdminAuthenticated: boolean;
   isAdminChecking: boolean;
+  currentPlan: EcoStepPlanConfig;
   onCalculate: (
     monthlyBill: number,
     selectedAppliances: Appliance[],
@@ -50,13 +58,14 @@ type EnergyEstimatorProps = {
   ) => void;
 };
 
-const DEMO_APPLIANCE_LIMIT = 4;
-
 export function EnergyEstimator({
   isAdminAuthenticated,
   isAdminChecking,
+  currentPlan,
   onCalculate,
 }: EnergyEstimatorProps) {
+
+
   const [currency, setCurrency] = useState<string>('USD');
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [selectedAppliances, setSelectedAppliances] = useState<Appliance[]>([]);
@@ -65,6 +74,70 @@ export function EnergyEstimator({
   const [costPerKw, setCostPerKw] = useState(900);
   const [batteryCostPerKwh, setBatteryCostPerKwh] = useState(500);
   const [results, setResults] = useState<CalculationResult | null>(null);
+  const visibleAppliances = useMemo(() => {
+  const visibleApplianceIds =
+      currentPlan.visibleApplianceIds;
+  
+    if (!visibleApplianceIds) {
+      return appliances;
+    }
+  
+    return appliances.filter((appliance) =>
+      visibleApplianceIds.includes(appliance.id)
+    );
+  }, [currentPlan.visibleApplianceIds]);
+  
+  const applianceLimit =
+    currentPlan.applianceLimit;
+  
+  const hasUnlimitedAppliances =
+    currentPlan.features
+      .unlimitedApplianceSelection ||
+    applianceLimit === null;
+
+    useEffect(() => {
+      setSelectedAppliances(
+        (currentSelections) => {
+          const allowedApplianceIds = new Set(
+            visibleAppliances.map(
+              (appliance) => appliance.id
+            )
+          );
+    
+          const allowedSelections =
+            currentSelections.filter((appliance) =>
+              allowedApplianceIds.has(appliance.id)
+            );
+    
+          const nextSelections =
+            hasUnlimitedAppliances
+              ? allowedSelections
+              : allowedSelections.slice(
+                  0,
+                  applianceLimit ?? 0
+                );
+    
+          const selectionsAreUnchanged =
+            nextSelections.length ===
+              currentSelections.length &&
+            nextSelections.every(
+              (appliance, index) =>
+                appliance.id ===
+                currentSelections[index]?.id
+            );
+    
+          return selectionsAreUnchanged
+            ? currentSelections
+            : nextSelections;
+        }
+      );
+    
+      setShowDemoLimitModal(false);
+    }, [
+      visibleAppliances,
+      hasUnlimitedAppliances,
+      applianceLimit,
+    ]);
 
   const currentCurrency = currencies.find((c) => c.code === currency) || currencies[0];
 
@@ -109,7 +182,12 @@ export function EnergyEstimator({
       return;
     }
   
-    if (selectedAppliances.length >= DEMO_APPLIANCE_LIMIT) {
+    if (
+      !hasUnlimitedAppliances &&
+      applianceLimit !== null &&
+      selectedAppliances.length >=
+        applianceLimit
+    ) {
       setShowDemoLimitModal(true);
       return;
     }
@@ -244,17 +322,26 @@ const scrollToCustomBlueprint = () => {
   <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-gray-400">
     <span className="h-2 w-2 rounded-full bg-eco-green" />
     <span>
-      Public Demo • {selectedAppliances.length}/{DEMO_APPLIANCE_LIMIT} appliances selected
+     {currentPlan.shortName} •{' '}
+     {selectedAppliances.length}
+     {!hasUnlimitedAppliances &&
+     applianceLimit !== null &&
+    `/${applianceLimit}`}{' '}
+     appliances selected
     </span>
   </div>
 
   <p className="mt-3 text-xs text-gray-500">
-    Full access unlocks unlimited appliances, branded reports, and company lead capture.
+  {hasUnlimitedAppliances
+    ? `${currentPlan.name} includes the complete appliance library and unlimited selections.`
+    : `${currentPlan.name} displays ${visibleAppliances.length} appliances and allows up to ${applianceLimit} selections.`}
   </p>
+
 </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {appliances.map((appliance, index) => {
+              {visibleAppliances.map(
+                   (appliance, index) => {
               const Icon = iconMap[appliance.icon] || Zap;
               const isSelected = selectedAppliances.some((a) => a.id === appliance.id);
               const selectedAppliance = selectedAppliances.find((a) => a.id === appliance.id);
@@ -539,7 +626,8 @@ const scrollToCustomBlueprint = () => {
       </h3>
 
       <p className="mb-5 text-sm leading-relaxed text-gray-400">
-        The public EcoStep demo allows up to {DEMO_APPLIANCE_LIMIT} appliances.
+        The {currentPlan.name} allows up to{' '} 
+        {applianceLimit ?? 0} appliances.
         Request full access to unlock unlimited appliances, white-label branding,
         custom pricing, and company lead capture.
       </p>
