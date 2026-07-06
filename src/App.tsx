@@ -486,6 +486,7 @@ return () => window.removeEventListener('scroll', handleScroll);
         <EnergyEstimator
            isAdminAuthenticated={isAdminAuthenticated}
            isAdminChecking={isAdminChecking}
+           currentPlan={currentPlan}
            onCalculate={handleCalculate}
         />
         </div>
