@@ -512,6 +512,7 @@ return () => window.removeEventListener('scroll', handleScroll);
         <AccessPortalPreview
          isAdminAuthenticated={isAdminAuthenticated}
          onAdminLoginSuccess={handleAdminLoginSuccess}
+         onOrganizationLoaded={setOrganization}
         />
 
         <AdminDashboardPreview
