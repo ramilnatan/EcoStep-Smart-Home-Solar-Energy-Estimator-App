@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Lock,
@@ -13,6 +13,10 @@ import {
 } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { supabase } from '../lib/supabase';
+import type {
+  SubscriberRecord,
+  OrganizationRecord,
+} from '../types';
 
 type LoginPortal = 'admin' | 'subscriber' | null;
 
@@ -31,6 +35,10 @@ export function AccessPortalPreview({
   const [adminError, setAdminError] = useState('');
   const [adminSuccess, setAdminSuccess] = useState('');
   const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [subscriber, setSubscriber] =
+  useState<SubscriberRecord | null>(null);
+  const [organization, setOrganization] =
+  useState<OrganizationRecord | null>(null);
 
   const handleRequestAccess = (requestType: string) => {
     localStorage.setItem('ecostep_request_type', requestType);
@@ -82,6 +90,26 @@ export function AccessPortalPreview({
         setAdminError(error?.message || 'Unable to sign in.');
         return;
       }
+
+      const { data: subscriberRecord } = await supabase
+  .from('subscribers')
+  .select('*')
+  .eq('auth_user_id', data.user.id)
+  .single();
+
+if (subscriberRecord) {
+  setSubscriber(subscriberRecord);
+
+  const { data: organizationRecord } = await supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', subscriberRecord.organization_id)
+    .single();
+
+  if (organizationRecord) {
+    setOrganization(organizationRecord);
+  }
+}
   
       const { data: adminRecord, error: roleError } = await supabase
         .from('admin_users')
