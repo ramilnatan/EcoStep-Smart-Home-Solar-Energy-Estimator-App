@@ -23,11 +23,13 @@ type LoginPortal = 'admin' | 'subscriber' | null;
 type AccessPortalPreviewProps = {
   isAdminAuthenticated: boolean;
   onAdminLoginSuccess: (email: string) => void;
+  onOrganizationLoaded: (organization: OrganizationRecord) => void;
 };
 
 export function AccessPortalPreview({
   isAdminAuthenticated,
   onAdminLoginSuccess,
+  onOrganizationLoaded,
 }: AccessPortalPreviewProps) {
   const [activePortal, setActivePortal] = useState<LoginPortal>(null);
   const [adminEmail, setAdminEmail] = useState('');
@@ -106,8 +108,9 @@ if (subscriberRecord) {
     .eq('id', subscriberRecord.organization_id)
     .single();
 
-  if (organizationRecord) {
-    setOrganization(organizationRecord);
+    if (organizationRecord) {
+      setOrganization(organizationRecord);
+      onOrganizationLoaded(organizationRecord);
   }
 }
   
