@@ -21,6 +21,7 @@ import { WhyEcoStep } from './components/WhyEcoStep';
 import { FAQSection } from './components/FAQSection';
 import { supabase } from './lib/supabase';
 import { ECOSTEP_PLANS } from './config/ecostepPlans';
+import { BrandContext } from './context/BrandContext';
 
 
 const primaryNavItems = [
@@ -56,6 +57,8 @@ function App() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isAdminChecking, setIsAdminChecking] = useState(true);
   const [adminEmail, setAdminEmail] = useState('');
+  const [organization, setOrganization] = useState(null);
+  const [subscriber, setSubscriber] = useState(null);
   const currentPlan = useMemo(
     () =>
       isAdminAuthenticated
@@ -304,7 +307,12 @@ return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div className="min-h-screen bg-dark-900 text-white overflow-x-hidden">
+    <BrandContext.Provider
+      value={{
+        organization,
+      }}
+    >
+      <div className="min-h-screen bg-dark-900 text-white overflow-x-hidden">
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-dark-900/80 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -618,6 +626,7 @@ return () => window.removeEventListener('scroll', handleScroll);
         )}
       </AnimatePresence>
     </div>
+   </BrandContext.Provider>
   );
 }
 
