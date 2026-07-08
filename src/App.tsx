@@ -22,7 +22,7 @@ import { FAQSection } from './components/FAQSection';
 import { supabase } from './lib/supabase';
 import { ECOSTEP_PLANS } from './config/ecostepPlans';
 import { BrandContext } from './context/BrandContext';
-
+import type { OrganizationRecord } from './types';
 
 const primaryNavItems = [
   { id: 'hero', label: 'Home', icon: Sun },
@@ -57,8 +57,10 @@ function App() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isAdminChecking, setIsAdminChecking] = useState(true);
   const [adminEmail, setAdminEmail] = useState('');
-  const [organization, setOrganization] = useState(null);
-  const [subscriber, setSubscriber] = useState(null);
+  const [organization, setOrganization] =
+  useState<OrganizationRecord | null>(null);
+  //const [organization, setOrganization] = useState(null);
+  //const [subscriber, setSubscriber] = useState(null);
   const currentPlan = useMemo(
     () =>
       isAdminAuthenticated
@@ -324,9 +326,8 @@ return () => window.removeEventListener('scroll', handleScroll);
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-eco-green to-eco-cyan flex items-center justify-center">
                 <Sun className="w-5 h-5 text-black" />
               </div>
-              <span className="text-xl font-bold">
-                <span className="text-white">Eco</span>
-                <span className="text-eco-green">Step</span>
+              <span className="text-xl font-bold text-white">
+                 {organization?.company_name ?? 'EcoStep'}
               </span>
             </motion.div>
 
@@ -556,9 +557,8 @@ return () => window.removeEventListener('scroll', handleScroll);
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-eco-green to-eco-cyan flex items-center justify-center">
                   <Sun className="w-5 h-5 text-black" />
                 </div>
-                <span className="text-xl font-bold">
-                  <span className="text-white">Eco</span>
-                  <span className="text-eco-green">Step</span>
+                <span className="text-xl font-bold text-white">
+                 {organization?.company_name ?? 'EcoStep'}
                 </span>
               </div>
               <p className="text-sm text-gray-500">
