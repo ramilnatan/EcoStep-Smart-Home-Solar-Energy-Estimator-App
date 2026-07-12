@@ -23,6 +23,7 @@ import { supabase } from './lib/supabase';
 import { ECOSTEP_PLANS } from './config/ecostepPlans';
 import { BrandContext } from './context/BrandContext';
 import type { OrganizationRecord } from './types';
+import { TrialRegistrationModal } from './components/TrialRegistrationModal';
 
 const primaryNavItems = [
   { id: 'hero', label: 'Home', icon: Sun },
@@ -57,9 +58,10 @@ function App() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isAdminChecking, setIsAdminChecking] = useState(true);
   const [adminEmail, setAdminEmail] = useState('');
+  const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
   const [organization, setOrganization] =
   useState<OrganizationRecord | null>(null);
-  //const [organization, setOrganization] = useState(null);
+    //const [organization, setOrganization] = useState(null);
   //const [subscriber, setSubscriber] = useState(null);
   const currentPlan = useMemo(
     () =>
@@ -626,6 +628,10 @@ return () => window.removeEventListener('scroll', handleScroll);
           </motion.button>
         )}
       </AnimatePresence>
+      <TrialRegistrationModal
+       isOpen={isTrialModalOpen}
+       onClose={() => setIsTrialModalOpen(false)}
+      />
     </div>
    </BrandContext.Provider>
   );
