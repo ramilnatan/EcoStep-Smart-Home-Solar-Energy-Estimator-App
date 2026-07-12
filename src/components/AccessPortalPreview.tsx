@@ -495,6 +495,72 @@ onAdminLoginSuccess(signedInEmail);
           </motion.div>
         </div>
       )}
+      {/* ===========================
+    Free Trial Registration
+=========================== */}
+
+<GlassCard glow="green" className="mt-10 p-8">
+  <div className="text-center mb-8">
+    <h3 className="text-3xl font-bold text-white">
+      🚀 Start Your Free Trial
+    </h3>
+
+    <p className="mt-2 text-gray-400">
+      Experience the complete EcoStep platform free for 7 days.
+      No payment required.
+    </p>
+  </div>
+
+  <div className="grid gap-5 md:grid-cols-2">
+
+    <input
+      type="text"
+      placeholder="Company Name"
+      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white"
+    />
+
+    <input
+      type="text"
+      placeholder="Full Name"
+      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white"
+    />
+
+    <input
+      type="email"
+      placeholder="Business Email"
+      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white"
+    />
+
+    <input
+      type="password"
+      placeholder="Password"
+      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white"
+    />
+
+    <input
+      type="text"
+      placeholder="Phone Number"
+      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white"
+    />
+
+    <input
+      type="text"
+      placeholder="Country"
+      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white"
+    />
+
+  </div>
+
+  <button
+    className="mt-8 w-full rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan py-3 font-semibold text-dark-900 transition hover:scale-[1.02]"
+  >
+    🚀 Create Free Trial
+  </button>
+
+  <p className="mt-4 text-center text-xs text-gray-500">
+    One free trial per company. Trial expires automatically after 7 days.
+  </p>
+</GlassCard>
     </section>
   );
 }
