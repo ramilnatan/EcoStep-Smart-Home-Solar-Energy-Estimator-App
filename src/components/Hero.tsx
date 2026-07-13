@@ -10,7 +10,13 @@ const features = [
   { icon: Zap, label: 'Energy Independent', value: 'Grid-Free', color: 'green' },
 ];
 
-export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void }) {
+export function Hero({
+  onScrollToEstimator,
+  onOpenTrialModal,
+}: {
+  onScrollToEstimator: () => void;
+  onOpenTrialModal: () => void;
+}) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900 pt-24 pb-24">
     
@@ -116,10 +122,20 @@ export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <Button size="lg" onClick={onScrollToEstimator}>
-            <Plug className="w-5 h-5" />
-            Estimate My System
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+  <Button size="lg" onClick={onScrollToEstimator}>
+    <Plug className="w-5 h-5" />
+    Estimate My System
+  </Button>
+
+  <Button
+  size="lg"
+  variant="secondary"
+  onClick={onOpenTrialModal}
+>
+  🚀 Start Free Trial
+</Button>
+</div>
         </motion.div>
 
         {/* Feature Cards */}
@@ -138,7 +154,7 @@ export function Hero({ onScrollToEstimator }: { onScrollToEstimator: () => void 
             >
               <GlassCard
                 glow={feature.color as 'green' | 'cyan' | 'amber'}
-                className="p-4 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:scale-[1.04] hover:shadow-xl hover:shadow-eco-green/10"
+                className="p-4 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:scale-[1.08] hover:shadow-xl hover:shadow-eco-green/10"
               >
                 <div className="flex flex-col items-center gap-2">
                   <div className={`
