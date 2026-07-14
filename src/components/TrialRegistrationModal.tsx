@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { GlassCard } from './ui/GlassCard';
 import { X } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 type TrialRegistrationModalProps = {
-  isOpen: boolean;
+  isOpen: boolean; 
   onClose: () => void;
 };
 
@@ -10,6 +12,53 @@ export function TrialRegistrationModal({
   isOpen,
   onClose,
 }: TrialRegistrationModalProps) {
+
+  const [companyName, setCompanyName] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('');
+  const [loading, setLoading] = useState(false);
+  const handleCreateTrial = async () => {
+  try {
+    setLoading(true);
+
+    // 1. Create the authentication account
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    // 2. Save trial information
+    const { error: insertError } = await supabase
+      .from('trial_registrations')
+      .insert({
+        company_name: companyName,
+        full_name: fullName,
+        email,
+        password,
+        phone,
+        country,
+      });
+
+    if (insertError) throw insertError;
+
+    alert(
+      '🎉 Account created successfully!\n\nPlease check your email to verify your account.'
+    );
+
+    onClose();
+
+  } catch (err: any) {
+    alert(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+       
   if (!isOpen) return null;
 
   return (
@@ -32,36 +81,48 @@ export function TrialRegistrationModal({
 
   <input
     type="text"
+    value={companyName}
+    onChange={(e) => setCompanyName(e.target.value)}
     placeholder="Company Name"
     className="rounded-xl border border-white/10 bg-dark-700 p-4 text-white"
   />
 
   <input
     type="text"
+    value={fullName}
+    onChange={(e) => setFullName(e.target.value)}
     placeholder="Full Name"
     className="rounded-xl border border-white/10 bg-dark-700 p-4 text-white"
   />
 
   <input
     type="email"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
     placeholder="Business Email"
     className="rounded-xl border border-white/10 bg-dark-700 p-4 text-white"
   />
 
   <input
     type="password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
     placeholder="Password"
     className="rounded-xl border border-white/10 bg-dark-700 p-4 text-white"
   />
 
   <input
     type="text"
+    value={phone}
+    onChange={(e) => setPhone(e.target.value)}
     placeholder="Phone Number"
     className="rounded-xl border border-white/10 bg-dark-700 p-4 text-white"
   />
 
   <input
     type="text"
+    value={country}
+    onChange={(e) => setCountry(e.target.value)}
     placeholder="Country"
     className="rounded-xl border border-white/10 bg-dark-700 p-4 text-white"
   />
@@ -69,15 +130,18 @@ export function TrialRegistrationModal({
 </div>
 
 <button
-  className="mt-8 w-full rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan py-4 font-semibold text-black"
+  onClick={handleCreateTrial}
+  disabled={loading}
+  className="mt-8 w-full rounded-xl bg-gradient-to-r from-eco-green to-eco-cyan py-4 font-semibold text-black disabled:opacity-50"
 >
-  🚀 Create Free Trial
-  
+  {loading ? 'Creating Trial...' : '🚀 Create Free Trial'}
 </button>
 
-✔ No credit card required
-✔ One trial per company
-✔ Automatically expires after 7 days
+<div className="mt-4 text-center text-xs text-gray-500">
+  <p>✔ No credit card required</p>
+  <p>✔ One trial per company</p>
+  <p>✔ Automatically expires after 7 days</p>
+</div>
 <button
   onClick={onClose}
   className="mt-3 w-full rounded-xl border border-white/10 py-3 text-gray-300 hover:bg-white/5"
