@@ -26,8 +26,13 @@ export function LoginModal({
       });
   
       if (error) throw error;
-  
-      alert("🎉 Login successful!");
+
+        // Clear the form
+        setEmail("");
+        setPassword("");
+
+        // Close the modal
+        onClose();
   
     } catch (err: any) {
       alert(err.message);
@@ -43,7 +48,11 @@ export function LoginModal({
       <GlassCard className="relative w-full max-w-xl p-8">
 
         <button
-          onClick={onClose}
+          onClick={() => {
+            setEmail("");
+            setPassword("");
+            onClose();
+        }}
           className="absolute top-4 right-4 text-gray-400 hover:text-white"
         >
           <X className="w-5 h-5" />
