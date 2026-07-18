@@ -24,6 +24,7 @@ import { ECOSTEP_PLANS } from './config/ecostepPlans';
 import { BrandContext } from './context/BrandContext';
 import type { OrganizationRecord } from './types';
 import { TrialRegistrationModal } from './components/TrialRegistrationModal';
+import { LoginModal } from "./components/LoginModal";
 
 const primaryNavItems = [
   { id: 'hero', label: 'Home', icon: Sun },
@@ -59,6 +60,7 @@ function App() {
   const [isAdminChecking, setIsAdminChecking] = useState(true);
   const [adminEmail, setAdminEmail] = useState('');
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);     
   const [organization, setOrganization] =
   useState<OrganizationRecord | null>(null);
     //const [organization, setOrganization] = useState(null);
@@ -416,6 +418,13 @@ return () => window.removeEventListener('scroll', handleScroll);
             </motion.button>
 
             <button
+              onClick={() => setIsLoginOpen(true)}
+              className="rounded-xl bg-blue-600 px-6 py-3 text-white"
+            >
+              Test Login
+            </button>              
+
+            <button
               type="button"
                 onClick={() => setIsMobileMenuOpen((prev) => !prev)}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-gray-300 transition-colors hover:bg-white/10 hover:text-white md:hidden"
@@ -481,6 +490,7 @@ return () => window.removeEventListener('scroll', handleScroll);
         >
           Get Started
         </button>
+        
       </div>
     </motion.div>
   )}
@@ -489,7 +499,10 @@ return () => window.removeEventListener('scroll', handleScroll);
       </nav>
 
       <main>
-        <Hero onScrollToEstimator={scrollToEstimator} />
+          <Hero
+              onScrollToEstimator={scrollToEstimator}
+              onOpenTrialModal={() => setIsTrialModalOpen(true)}
+          />
 
         <DemoAccessBanner />
 
@@ -631,6 +644,10 @@ return () => window.removeEventListener('scroll', handleScroll);
       <TrialRegistrationModal
        isOpen={isTrialModalOpen}
        onClose={() => setIsTrialModalOpen(false)}
+      />
+      <LoginModal
+       isOpen={isLoginOpen}
+       onClose={() => setIsLoginOpen(false)}
       />
     </div>
    </BrandContext.Provider>
