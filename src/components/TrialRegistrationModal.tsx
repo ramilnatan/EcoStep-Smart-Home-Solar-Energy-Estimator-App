@@ -3,6 +3,8 @@ import { GlassCard } from './ui/GlassCard';
 import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+
+
 type TrialRegistrationModalProps = {
   isOpen: boolean; 
   onClose: () => void;
@@ -20,8 +22,30 @@ export function TrialRegistrationModal({
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const resetForm = () => {
+    setCompanyName("");
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setPhone("");
+    setCountry("");
+  };
   const handleCreateTrial = async () => {
   try {
+
+    if (
+      !companyName ||
+      !fullName ||
+      !email ||
+      !password ||
+      !phone ||
+      !country
+    ) {
+      alert("Please complete all fields.");
+      return;
+    }
+
     setLoading(true);
 
     // 1. Create the authentication account
@@ -46,10 +70,12 @@ export function TrialRegistrationModal({
 
     if (insertError) throw insertError;
 
-    alert(
+    alert( 
       '🎉 Account created successfully!\n\nPlease check your email to verify your account.'
     );
 
+    // Reset the form and close the modal
+    resetForm();
     onClose();
 
   } catch (err: any) {
@@ -65,7 +91,10 @@ export function TrialRegistrationModal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <GlassCard className="relative w-full max-w-3xl p-8">
       <button
-        onClick={onClose}
+        onClick={() => {
+          resetForm();
+          onClose();
+        }}
         className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition"
       >
           <X className="w-5 h-5" />
@@ -143,7 +172,10 @@ export function TrialRegistrationModal({
   <p>✔ Automatically expires after 7 days</p>
 </div>
 <button
-  onClick={onClose}
+  onClick={() => {
+    resetForm();
+    onClose();
+  }}
   className="mt-3 w-full rounded-xl border border-white/10 py-3 text-gray-300 hover:bg-white/5"
 >
   Cancel
