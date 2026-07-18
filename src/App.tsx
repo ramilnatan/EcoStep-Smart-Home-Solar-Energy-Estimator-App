@@ -49,6 +49,7 @@ const moreActiveSectionIds = [
   'subscriber-dashboard-preview',
 ];
 
+
 function App() {
   const estimatorRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -63,8 +64,34 @@ function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);     
   const [organization, setOrganization] =
   useState<OrganizationRecord | null>(null);
+  const [user, setUser] = useState<any>(null);  
     //const [organization, setOrganization] = useState(null);
   //const [subscriber, setSubscriber] = useState(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+      
+      setUser(currentUser);
+    };
+  
+    checkUser();
+  }, []);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+  
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const currentPlan = useMemo(
     () =>
       isAdminAuthenticated
@@ -312,6 +339,14 @@ return () => window.removeEventListener('scroll', handleScroll);
 
   }, []);
 
+  const handleLogout = async () => { 
+  await supabase.auth.signOut();
+
+  setUser(null);
+
+  //alert("Logged out successfully.");
+};
+
   return (
     <BrandContext.Provider
       value={{
@@ -414,15 +449,43 @@ return () => window.removeEventListener('scroll', handleScroll);
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Get Started
+              Get Started 
             </motion.button>
 
-            <button
-              onClick={() => setIsLoginOpen(true)}
-              className="rounded-xl bg-blue-600 px-6 py-3 text-white"
-            >
-              Test Login
-            </button>              
+            {user ? (
+  <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-2">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-eco-green text-dark-900 font-bold">
+      {user.email?.charAt(0).toUpperCase()}
+    </div>
+
+    <div className="hidden sm:block text-left">
+      <p className="text-xs text-gray-400">
+        Logged in 
+      </p>
+
+      <p className="text-sm font-medium text-white">
+        {user.email}
+      </p>
+    </div>
+
+    <button
+      onClick={handleLogout}
+      className="rounded-lg bg-red-500/20 px-3 py-1 text-xs text-red-300 hover:bg-red-500/30"
+    >
+      Logout
+    </button>
+  </div>
+) : (
+  <button
+    onClick={() => setIsLoginOpen(true)}
+    className="rounded-xl bg-blue-300 px-6 py-1.5 text-white"
+    //className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-eco-green to-eco-cyan rounded-xl text-black font-semibold text-sm"
+    
+  >
+    Login 
+
+  </button>
+)}           
 
             <button
               type="button"
